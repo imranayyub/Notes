@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "155298904057",
+    "project_id": "notes-2cead"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155298904057:android:338cae2b33e5e63a",
+        "android_client_info": {
+          "package_name": "com.example.imran.notes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "155298904057-odmro7df2pviivk8qtjvl1va00ubnms9.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "155298904057-7tlcdchn3965e0aof82g7qufi060vfuc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.imran.notes",
+            "certificate_hash": "97c0348cf0f82f519b638b3eb64a1f50815be666"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTe_xAeTSJqP9Rn3KddkiDzlYi56XXhWM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
