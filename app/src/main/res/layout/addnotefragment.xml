@@ -4,15 +4,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+    <EditText
+        android:id="@+id/noteTitle"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="5dp"
+        android:gravity="start"
+        android:hint="Title"
+        android:textStyle="bold"
+        android:textAlignment="viewStart" />
 
     <EditText
         android:id="@+id/note"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="5dp"
+        android:layout_height="350dp"
+        android:layout_marginTop="55dp"
         android:gravity="start"
         android:hint="Take a note..."
-        android:textAlignment="viewStart" />
+         />
 
     <LinearLayout
         android:layout_width="match_parent"

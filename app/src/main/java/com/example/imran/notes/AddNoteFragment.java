@@ -18,9 +18,9 @@ import android.widget.Toast;
 
 public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
-    EditText note;
+    EditText note, noteTitle;
     Button addNote, cancel;
-    String notes;
+    String notes, title;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -34,6 +34,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         note = (EditText) getActivity().findViewById(R.id.note);
+        noteTitle = (EditText) getActivity().findViewById(R.id.noteTitle);
         addNote = (Button) getActivity().findViewById(R.id.addNote);
         cancel = (Button) getActivity().findViewById(R.id.cancel);
         addNote.setOnClickListener(this);
@@ -47,25 +48,33 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         switch (id) {
             case R.id.addNote: {
                 notes = note.getText().toString();
+                title = noteTitle.getText().toString();
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
+
                     intent = new Intent(getActivity(), HomeActivity.class);
-                    Bundle bundle=new Bundle();
-                    bundle.putInt("Addnote",1);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("Addnote", notes);
+                    bundle.putString("Title", title);
+                    bundle.putInt("add", 1);
                     intent.putExtras(bundle);
                     startActivity(intent);
                 }
                 break;
             }
             case R.id.cancel: {
+                Intent intent;
+                intent = new Intent(getActivity(), HomeActivity.class);
+                startActivity(intent);
                 Toast.makeText(getActivity(), "Cancelled", Toast.LENGTH_SHORT).show();
                 break;
 
             }
         }
     }
+
 
 }

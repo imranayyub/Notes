@@ -15,13 +15,17 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -33,10 +37,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     public static int singOut = 0;
     public static GoogleApiClient mGoogleApiClient;
     private Context context;
+    public static GoogleSignInClient googleSignInClient;
     //    private Context context;
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
-    String userName, email, userPic;
+    public static String userName, email, userPic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,9 +60,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .enableAutoManage(this, this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        if(singOut==1)
-        signOut();
     }
 
     //oncClick method to perform action according to the button being clicked.
@@ -88,16 +92,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     //sign out  function for google
     public void signOut() {
-        Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                new ResultCallback<Status>() {
+        googleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
-                    public void onResult(Status status) {
-
-
+                    public void onComplete(@NonNull Task<Void> task) {
                     }
                 });
-
     }
+
 
     //function to fetch the google log in data(Name , Email and profile) for current profile logged in
     public void handleSignInResult(GoogleSignInResult result) {
@@ -119,12 +121,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             //Creating intent to HomeActivity.
             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-//            Using Bundle to pass data to HomeActivity.
-            Bundle bundle = new Bundle();
-            bundle.putString("name", userName);
-            bundle.putString("email", email);
-            bundle.putString("userPic", userPic);
-            intent.putExtras(bundle);
 //            Starting HomeActivity.
             startActivity(intent);
             finish();
@@ -154,13 +150,13 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     boolean connected = false;
 
     private boolean isNetworkAvailable() {
-        //ConnnectivityManager querires about connectivity like mobile data, wifi and Gprs.
+        //ConnnectivityManager queries about connectivity like mobile data, wifi and Gprs.
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         //Network info define Status of network.
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         if (activeNetworkInfo == null) {
-            Toast.makeText(this, "No Internet Connection", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "No Internet Connection", Toast.LENGTH_SHORT).show();
             connected = false;
         } else {
             connected = true;
@@ -178,19 +174,4 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     public void onConnectionSuspended(int i) {
 
     }
-//    public LoginActivity(Context context)
-//    {
-//        this.context =context;
-//
-//Configures sign-in to request the user's ID, email address, and basic profile.
-//        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-//                .requestEmail()
-//                .build();
-// Builds a GoogleSignInClient with the options specified by gso.
-//        mGoogleApiClient = new GoogleApiClient.Builder(this).addOnConnectionFailedListener(this)
-//                .enableAutoManage(this, this)
-//                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-//                .build();
-//    }
-
 }

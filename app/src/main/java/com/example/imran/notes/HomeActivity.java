@@ -7,6 +7,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.ContextMenu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,21 +19,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.plus.Plus;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 
-import static com.example.imran.notes.LoginActivity.mGoogleApiClient;
-import static com.example.imran.notes.LoginActivity.singOut;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.example.imran.notes.LoginActivity.email;
+import static com.example.imran.notes.LoginActivity.userName;
+import static com.example.imran.notes.LoginActivity.userPic;
 
 
 public class HomeActivity extends AppCompatActivity
@@ -41,6 +45,12 @@ public class HomeActivity extends AppCompatActivity
     Button newNote;
     FragmentManager manager = getFragmentManager();    //Initializing Fragment Manager.
     AddNoteFragment Fragment = new AddNoteFragment();
+
+    RecyclerView recyclerView;
+    static ArrayList<String> noteList = new ArrayList<>();
+    static ArrayList<String> titleList = new ArrayList<>();
+    public static int i = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,7 +58,7 @@ public class HomeActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        newNote=(Button)findViewById(R.id.newNote);
+        newNote = (Button) findViewById(R.id.newNote);
         newNote.setOnClickListener(this);
 
 
@@ -69,16 +79,13 @@ public class HomeActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        Bundle bundle = getIntent().getExtras();
         View header = navigationView.getHeaderView(0);
-        String name = bundle.getString("name");
-        String email = bundle.getString("email");
-        String userPic = bundle.getString("userPic");
+
         //setting data in Navigation Bar Header.
         imageView = (ImageView) header.findViewById(R.id.imageView);
         emails = (TextView) header.findViewById(R.id.emails);
         names = (TextView) header.findViewById(R.id.names);
-        names.setText(name);
+        names.setText(userName);
         emails.setText(email);
         Glide.with(getApplicationContext()).load(userPic)
                 .thumbnail(0.5f)
@@ -86,6 +93,29 @@ public class HomeActivity extends AppCompatActivity
                 .transform(new CircleTransform(HomeActivity.this))
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView);
+
+
+        Bundle bundle;
+        bundle = getIntent().getExtras();
+        recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
+        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));  //Displays recycler view in fragment.
+        try {
+            if (bundle.getInt("add") == 1) {
+                noteList.add(i, bundle.getString("Addnote"));
+                titleList.add(i, bundle.getString("Title"));
+                i++;
+                //Setting data in recycler view.
+                MyAdapter adapter = new MyAdapter(this, noteList,titleList);
+//                registerForContextMenu(recyclerView);
+                recyclerView.setAdapter(adapter);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     @Override
@@ -128,17 +158,12 @@ public class HomeActivity extends AppCompatActivity
 
         if (id == R.id.logoutBn) {
             // logs user out
-//LoginActivity loginActivity= new LoginActivity(getApplicationContext());
-//singOut=1;
-            if (mGoogleApiClient.isConnected()) {
-                Plus.AccountApi.clearDefaultAccount(mGoogleApiClient);
-                mGoogleApiClient.disconnect();
-                mGoogleApiClient.connect();
-            }
+            LoginActivity loginActivity = new LoginActivity();
+            loginActivity.signOut();
             Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
             //Starting LoginActivity.
             startActivity(intent);
-            finish();
+            //finish();
 
         }
 
@@ -168,4 +193,47 @@ public class HomeActivity extends AppCompatActivity
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
+
+//    public void data(String note) {
+//
+////       note = bundle.getString("Addnote");
+//        noteList.add(i, note);
+//        i++;
+//        //Setting data in recycler view.
+//        MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
+//        recyclerView.setAdapter(adapter);
+//
+//    }
+
+//    @Override
+//    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+//        super.onCreateContextMenu(menu, v, menuInfo);
+//        menu.setHeaderTitle("Options:");
+//        menu.add(0, v.getId(), 0, "Remove Note");//groupId, itemId, order, title
+//        menu.add(0, v.getId(), 0, "Mark as Very Important");
+//        menu.add(0, v.getId(), 0, "Mark as Important");
+//        menu.add(0, v.getId(), 0, "Cancel");
+//    }
+//
+//    @Override
+//    public boolean onContextItemSelected(MenuItem item) {
+//        if (item.getTitle() =="Remove Note"){
+//            Toast.makeText(getApplicationContext(),"Removing Note",Toast.LENGTH_SHORT).show();
+//        }
+//        else   if (item.getTitle() =="Mark as Very Important"){
+//            Toast.makeText(getApplicationContext(),"Very Important Note",Toast.LENGTH_SHORT).show();
+//        }
+//        else   if (item.getTitle() =="Mark as Important"){
+//            Toast.makeText(getApplicationContext(),"Important Note",Toast.LENGTH_SHORT).show();
+//        }
+//        else   if (item.getTitle() =="Cancel"){
+//            Toast.makeText(getApplicationContext(),"Cancel",Toast.LENGTH_SHORT).show();
+//        }
+//        else {
+//            return false;
+//        }
+//        return true;
+//    }
+
+
 }
