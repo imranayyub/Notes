@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import static com.example.imran.notes.HomeActivity.databaseNote;
+import static com.example.imran.notes.LoginActivity.userName;
+import static com.example.imran.notes.MyAdapter.editNote;
+import static com.example.imran.notes.MyAdapter.editNoteId;
+import static com.example.imran.notes.MyAdapter.editNotePrioirty;
+import static com.example.imran.notes.MyAdapter.editNoteTitle;
 
 /**
  * Created by imran on 13/1/18.
@@ -21,6 +32,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     EditText note, noteTitle;
     Button addNote, cancel;
     String notes, title;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -37,8 +49,13 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         noteTitle = (EditText) getActivity().findViewById(R.id.noteTitle);
         addNote = (Button) getActivity().findViewById(R.id.addNote);
         cancel = (Button) getActivity().findViewById(R.id.cancel);
+        if (editNoteId != null) {
+            note.setText(editNote);
+            noteTitle.setText(editNoteTitle);
+        }
         addNote.setOnClickListener(this);
         cancel.setOnClickListener(this);
+
     }
 
     //oncClick method to perform action according to the button being clicked.
@@ -51,21 +68,27 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 title = noteTitle.getText().toString();
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
-                else {
+                else if (editNoteId != null) {
+                    editNote(editNoteId, title, notes,editNotePrioirty);
+                    Intent intent;
+                    intent = new Intent(getActivity(), HomeActivity.class);
+                    startActivity(intent);
+                } else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
-
+                    addNote();
                     intent = new Intent(getActivity(), HomeActivity.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("Addnote", notes);
-                    bundle.putString("Title", title);
-                    bundle.putInt("add", 1);
-                    intent.putExtras(bundle);
+//                    Bundle bundle = new Bundle();
+//                    bundle.putString("Addnote", notes);
+//                    bundle.putString("Title", title);
+//                    bundle.putInt("add", 1);
+//                    intent.putExtras(bundle);
                     startActivity(intent);
                 }
                 break;
             }
             case R.id.cancel: {
+                editNoteId = null;
                 Intent intent;
                 intent = new Intent(getActivity(), HomeActivity.class);
                 startActivity(intent);
@@ -77,4 +100,27 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     }
 
 
+    //adds note in the Firebase realtime database.
+    public void addNote() {
+        String nId = databaseNote.push().getKey();
+        NoteList noteList = new NoteList(nId, title, notes,"default");
+        databaseNote.child(nId).setValue(noteList);
+        Toast.makeText(getActivity(), "Realtime Database!!!", Toast.LENGTH_SHORT).show();
+
+    }
+
+    public static void editNote(String editId, String editNoteTitle, String editNote,String priority) {
+        editNoteId = null;
+//        DatabaseReference editreference;
+        NoteList noteList = new NoteList(editId, editNoteTitle, editNote,priority);
+//        editreference = FirebaseDatabase.getInstance().getReference("NoteList").child(editId);
+        databaseNote.child(editId).setValue(noteList);
+//        Toast.makeText(getActivity(), "Updated Realtime Database!!!", Toast.LENGTH_SHORT).show();
+
+    }
+    public static void removeNote(String deleteNoteId)
+    {
+        databaseNote.child(deleteNoteId).removeValue();
+
+    }
 }

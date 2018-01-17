@@ -26,9 +26,13 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.DateFormat;
 import java.util.Date;
+
+import static com.example.imran.notes.HomeActivity.databaseNote;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
 
@@ -42,6 +46,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
     public static String userName, email, userPic;
+
+
+    public DatabaseReference databaseUser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +69,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        databaseUser = FirebaseDatabase.getInstance().getReference("User");
 
     }
 
@@ -121,6 +131,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             //Creating intent to HomeActivity.
             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+            addUser();
 //            Starting HomeActivity.
             startActivity(intent);
             finish();
@@ -172,6 +183,17 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     @Override
     public void onConnectionSuspended(int i) {
+
+    }
+
+    public static String userId = "asdsa";
+
+    //adds note in the Firebase realtime database.
+    public void addUser() {
+        userId = databaseUser.push().getKey();
+        User user = new User(userId, userName, email);
+        databaseUser.child(userId).setValue(user);
+        Toast.makeText(this, "User Realtime Database!!!", Toast.LENGTH_SHORT).show();
 
     }
 }

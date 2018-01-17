@@ -1,7 +1,9 @@
 {
   "project_info": {
     "project_number": "155298904057",
-    "project_id": "notes-2cead"
+    "firebase_url": "https://notes-2cead.firebaseio.com",
+    "project_id": "notes-2cead",
+    "storage_bucket": "notes-2cead.appspot.com"
   },
   "client": [
     {
@@ -12,6 +14,10 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "155298904057-h9ilq6caimp9j3uuptogiah5cmpv1u18.apps.googleusercontent.com",
+          "client_type": 3
+        },
         {
           "client_id": "155298904057-odmro7df2pviivk8qtjvl1va00ubnms9.apps.googleusercontent.com",
           "client_type": 3

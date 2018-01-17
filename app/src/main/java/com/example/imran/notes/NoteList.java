@@ -5,11 +5,17 @@ package com.example.imran.notes;
  */
 
 public class NoteList {
-    String title,note;
+    String title, note;
+    String id,priority;
 
-    public NoteList(String title, String note) {
+    public NoteList(String id, String title, String note,String priority) {
         this.title = title;
         this.note = note;
+        this.id = id;
+        this.priority=priority;
+    }
+
+    public NoteList() {
     }
 
     public String getTitle() {
@@ -26,5 +32,21 @@ public class NoteList {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
     }
 }

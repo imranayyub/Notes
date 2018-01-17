@@ -7,8 +7,10 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.ContextMenu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -27,18 +29,27 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.example.imran.notes.LoginActivity.email;
+import static com.example.imran.notes.LoginActivity.userId;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.LoginActivity.userPic;
+import static com.example.imran.notes.MyAdapter.editNoteId;
 
 
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+    //defining DatabaseReference object to send and retrieve data.
+    public static DatabaseReference databaseNote;
 
     ImageView imageView;
     TextView names, emails;
@@ -47,9 +58,7 @@ public class HomeActivity extends AppCompatActivity
     AddNoteFragment Fragment = new AddNoteFragment();
 
     RecyclerView recyclerView;
-    static ArrayList<String> noteList = new ArrayList<>();
-    static ArrayList<String> titleList = new ArrayList<>();
-    public static int i = 0;
+    ArrayList<NoteList> noteList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,84 +96,102 @@ public class HomeActivity extends AppCompatActivity
         names = (TextView) header.findViewById(R.id.names);
         names.setText(userName);
         emails.setText(email);
-        Glide.with(getApplicationContext()).load(userPic)
-                .thumbnail(0.5f)
-                .crossFade()
-                .transform(new CircleTransform(HomeActivity.this))
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(imageView);
-
-
-        Bundle bundle;
-        bundle = getIntent().getExtras();
-        recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
-        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));  //Displays recycler view in fragment.
-        try {
-            if (bundle.getInt("add") == 1) {
-                noteList.add(i, bundle.getString("Addnote"));
-                titleList.add(i, bundle.getString("Title"));
-                i++;
-                //Setting data in recycler view.
-                MyAdapter adapter = new MyAdapter(this, noteList,titleList);
-//                registerForContextMenu(recyclerView);
-                recyclerView.setAdapter(adapter);
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (userPic.equals("Nopic"))
+            imageView.setBackgroundResource(R.drawable.noic1);
+        else {
+            Glide.with(getApplicationContext()).load(userPic)
+                    .thumbnail(0.5f)
+                    .crossFade()
+                    .transform(new CircleTransform(HomeActivity.this))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(imageView);
         }
 
+        //For staggered layout.
+        //Initializing databaseReference object.
+        databaseNote = FirebaseDatabase.getInstance().getReference("NoteList").child(userName);
+        if (editNoteId != null) {
+            showAddNoteFragment();
+        }
+
+        //finds recyclerView in the xml.
+        recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
 
     }
 
+    //preforms suitable action in case back button is pressed.
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            onStart();
+//            super.onBackPressed();
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.home, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
+////    @Override
+////    public boolean onCreateOptionsMenu(Menu menu) {
+//         Inflate the menu; this adds items to the action bar if it is present.
+////        getMenuInflater().inflate(R.menu.home, menu);
+////        return true;
+////    }
+//
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//
+//        //noinspection SimplifiableIfStatement
+////        if (id == R.id.action_settings) {
+////            return true;
+////        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
+        switch (id) {
+            case R.id.home : {
+                getSupportActionBar().setTitle("Home");
+                onStart();
+                break;
+            }
 
-        if (id == R.id.logoutBn) {
-            // logs user out
-            LoginActivity loginActivity = new LoginActivity();
-            loginActivity.signOut();
-            Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
-            //Starting LoginActivity.
-            startActivity(intent);
-            //finish();
+            case R.id.importantBn: {
+                getSupportActionBar().setTitle("Important Notes");
+                prioirtyNotes("Important");
+                break;
+            }
+            case R.id.urgentBn :{
+                getSupportActionBar().setTitle("Urgent Notes");
+                prioirtyNotes("Urgent");
+          break;
+            }
 
+            case R.id.normalBn : {
+                getSupportActionBar().setTitle("Normal Notes");
+                prioirtyNotes("default");
+                break;
+            }
+            case R.id.logoutBn: {
+                // logs user out
+                editNoteId=null;
+                LoginActivity loginActivity = new LoginActivity();
+                loginActivity.signOut();
+                Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
+                //Starting LoginActivity.
+                startActivity(intent);
+                //finish();
+                break;
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -180,10 +207,7 @@ public class HomeActivity extends AppCompatActivity
         switch (id) {
             case R.id.newNote: {
 
-                getSupportActionBar().setTitle("Add Note");
-                FragmentTransaction transaction = manager.beginTransaction();
-                transaction.replace(R.id.mainxml, Fragment).commit();
-                transaction.show(Fragment);
+                showAddNoteFragment();
                 break;
             }
         }
@@ -194,46 +218,82 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-//    public void data(String note) {
-//
-////       note = bundle.getString("Addnote");
-//        noteList.add(i, note);
-//        i++;
-//        //Setting data in recycler view.
-//        MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
-//        recyclerView.setAdapter(adapter);
-//
-//    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //fetches data from Firebase realtime database.
+        try {
+            databaseNote.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    noteList.clear();
+                    for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
+                        NoteList noteLists = notesnapshot.getValue(NoteList.class);
+                        noteList.add(noteLists);
+                    }
 
-//    @Override
-//    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-//        super.onCreateContextMenu(menu, v, menuInfo);
-//        menu.setHeaderTitle("Options:");
-//        menu.add(0, v.getId(), 0, "Remove Note");//groupId, itemId, order, title
-//        menu.add(0, v.getId(), 0, "Mark as Very Important");
-//        menu.add(0, v.getId(), 0, "Mark as Important");
-//        menu.add(0, v.getId(), 0, "Cancel");
-//    }
-//
-//    @Override
-//    public boolean onContextItemSelected(MenuItem item) {
-//        if (item.getTitle() =="Remove Note"){
-//            Toast.makeText(getApplicationContext(),"Removing Note",Toast.LENGTH_SHORT).show();
-//        }
-//        else   if (item.getTitle() =="Mark as Very Important"){
-//            Toast.makeText(getApplicationContext(),"Very Important Note",Toast.LENGTH_SHORT).show();
-//        }
-//        else   if (item.getTitle() =="Mark as Important"){
-//            Toast.makeText(getApplicationContext(),"Important Note",Toast.LENGTH_SHORT).show();
-//        }
-//        else   if (item.getTitle() =="Cancel"){
-//            Toast.makeText(getApplicationContext(),"Cancel",Toast.LENGTH_SHORT).show();
-//        }
-//        else {
-//            return false;
-//        }
-//        return true;
-//    }
+                    StaggeredGridLayoutManager staggeredGridLayoutManager;
+                    staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                            StaggeredGridLayoutManager.VERTICAL);
+                    recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                    recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
 
 
+                    MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
+//                registerForContextMenu(recyclerView);
+                    recyclerView.setAdapter(adapter);
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+    }
+
+    //shows AddnoteFragment.
+    public void showAddNoteFragment() {
+        getSupportActionBar().setTitle("Add Note");
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.replace(R.id.mainxml, Fragment).commit();
+        transaction.show(Fragment);
+
+    }
+    public void prioirtyNotes(final String priority)
+    {
+        databaseNote.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                noteList.clear();
+                int i = 0;
+                for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
+                    NoteList noteLists = notesnapshot.getValue(NoteList.class);
+                    if (noteLists.getPriority().equals(priority)) {
+                        noteList.add(i,noteLists);
+                        i++;
+                    }
+                }
+                StaggeredGridLayoutManager staggeredGridLayoutManager;
+                staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                        StaggeredGridLayoutManager.VERTICAL);
+                recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
+
+                MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
+//                registerForContextMenu(recyclerView);
+                recyclerView.setAdapter(adapter);
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
 }
