@@ -1,8 +1,11 @@
 package com.example.imran.notes;
 
+import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -11,6 +14,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -36,10 +40,15 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import static com.example.imran.notes.LoginActivity.email;
+import static com.example.imran.notes.LoginActivity.login;
+import static com.example.imran.notes.LoginActivity.pref;
 import static com.example.imran.notes.LoginActivity.userId;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.LoginActivity.userPic;
@@ -51,6 +60,7 @@ public class HomeActivity extends AppCompatActivity
     //defining DatabaseReference object to send and retrieve data.
     public static DatabaseReference databaseNote;
 
+    public static FloatingActionButton fab;
     ImageView imageView;
     TextView names, emails;
     Button newNote;
@@ -67,18 +77,27 @@ public class HomeActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        newNote = (Button) findViewById(R.id.newNote);
-        newNote.setOnClickListener(this);
+//        newNote = (Button) findViewById(R.id.newNote);
+//        newNote.setOnClickListener(this);
 
+        //getting date in day date month yy format.
+        DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy, HH:mm");
+        String date = df.format(Calendar.getInstance().getTime());
+               System.out.print(date);
+               Log.i("date",date);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(this);
+//        {
+//            @Override
+//            public void onClick(View view) {
+
+//                Snackbar.make(view, "Take a note", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//                showAddNoteFragment();
+//
+//            }
+//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -96,8 +115,9 @@ public class HomeActivity extends AppCompatActivity
         names = (TextView) header.findViewById(R.id.names);
         names.setText(userName);
         emails.setText(email);
-        if (userPic.equals("Nopic"))
-            imageView.setBackgroundResource(R.drawable.noic1);
+        if (userPic.equals("Nopic")){
+//            imageView.setBackgroundResource(R.drawable.noic1);
+        }
         else {
             Glide.with(getApplicationContext()).load(userPic)
                     .thumbnail(0.5f)
@@ -159,37 +179,35 @@ public class HomeActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
         switch (id) {
-            case R.id.home : {
+            case R.id.home: {
                 getSupportActionBar().setTitle("Home");
+                fab.setVisibility(View.VISIBLE);
                 onStart();
                 break;
             }
 
             case R.id.importantBn: {
                 getSupportActionBar().setTitle("Important Notes");
-                prioirtyNotes("Important");
+                fab.setVisibility(View.INVISIBLE);
+                priorityNotes("Important");
                 break;
             }
-            case R.id.urgentBn :{
+            case R.id.urgentBn: {
+                fab.setVisibility(View.INVISIBLE);
                 getSupportActionBar().setTitle("Urgent Notes");
-                prioirtyNotes("Urgent");
-          break;
+                priorityNotes("Urgent");
+                break;
             }
 
-            case R.id.normalBn : {
+            case R.id.normalBn: {
+                fab.setVisibility(View.INVISIBLE);
                 getSupportActionBar().setTitle("Normal Notes");
-                prioirtyNotes("default");
+                priorityNotes("default");
                 break;
             }
             case R.id.logoutBn: {
                 // logs user out
-                editNoteId=null;
-                LoginActivity loginActivity = new LoginActivity();
-                loginActivity.signOut();
-                Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
-                //Starting LoginActivity.
-                startActivity(intent);
-                //finish();
+                logoutDialog();
                 break;
             }
         }
@@ -205,11 +223,20 @@ public class HomeActivity extends AppCompatActivity
     public void onClick(View v) {
         int id = v.getId();
         switch (id) {
-            case R.id.newNote: {
-
+//            case R.id.newNote: {
+//
+//                showAddNoteFragment();
+//                break;
+//            }
+            case R.id.fab: {
+//            Snackbar.make(v, "Take a note", Snackbar.LENGTH_LONG);
+//                    .setAction("Action", null).show();
+                fab.setVisibility(View.INVISIBLE);
                 showAddNoteFragment();
                 break;
+
             }
+
         }
     }
 
@@ -262,10 +289,12 @@ public class HomeActivity extends AppCompatActivity
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.replace(R.id.mainxml, Fragment).commit();
         transaction.show(Fragment);
+        overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
+
 
     }
-    public void prioirtyNotes(final String priority)
-    {
+
+    public void priorityNotes(final String priority) {
         databaseNote.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -274,7 +303,7 @@ public class HomeActivity extends AppCompatActivity
                 for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
                     NoteList noteLists = notesnapshot.getValue(NoteList.class);
                     if (noteLists.getPriority().equals(priority)) {
-                        noteList.add(i,noteLists);
+                        noteList.add(i, noteLists);
                         i++;
                     }
                 }
@@ -296,4 +325,54 @@ public class HomeActivity extends AppCompatActivity
             }
         });
     }
+
+    //show dialog on logout.
+    void logoutDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(HomeActivity.this);
+
+        // Setting Dialog Title
+        alertDialog.setTitle("Confirm Logout");
+
+        // Setting Dialog Message
+        alertDialog.setMessage("Are you sure you want to Logout?");
+
+        // Setting Icon to Dialog
+//        alertDialog.setIcon(R.drawable.warning);
+
+        // Setting Positive "Yes" Button
+        alertDialog.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                editNoteId = null;
+                login = false;
+                //putting login value as false.
+                pref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putBoolean("login", login);
+                editor.commit();
+
+                LoginActivity loginActivity = new LoginActivity();
+                loginActivity.signOut();
+
+                Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
+                //Starting LoginActivity.
+                startActivity(intent);
+//                finish();
+
+            }
+        });
+
+        // Setting Negative "NO" Button
+        alertDialog.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // Write your code here to invoke NO event
+                dialog.cancel();
+            }
+        });
+        // Showing Alert Message
+            alertDialog.show();
+
+    }
+
+
 }

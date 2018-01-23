@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+
     <EditText
         android:id="@+id/noteTitle"
         android:layout_width="match_parent"
@@ -11,17 +12,19 @@
         android:layout_marginTop="5dp"
         android:gravity="start"
         android:hint="Title"
-        android:textStyle="bold"
-        android:textAlignment="viewStart" />
+        android:backgroundTint="#0000"
+        android:singleLine="true"
+        android:maxLines="1"
+        android:textAlignment="viewStart"
+        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/note"
         android:layout_width="match_parent"
-        android:layout_height="350dp"
+        android:layout_height="400dp"
         android:layout_marginTop="55dp"
         android:gravity="start"
-        android:hint="Take a note..."
-         />
+        android:hint="Take a note..." />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -34,17 +37,19 @@
         <Button
             android:id="@+id/addNote"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="35dp"
             android:layout_margin="16dp"
             android:layout_weight="1"
+            android:background="@drawable/mybutton"
             android:text="Add Note" />
 
         <Button
             android:id="@+id/cancel"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="35dp"
             android:layout_margin="16dp"
             android:layout_weight="1"
+            android:background="@drawable/mybutton"
             android:text="Cancel" />
     </LinearLayout>
 

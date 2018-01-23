@@ -16,6 +16,8 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
+import static com.example.imran.notes.HomeActivity.fab;
+
 /**
  * Created by Im on 21-11-2017.
  */
@@ -52,14 +54,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
         notes = note.getNote();
         title = note.getTitle();
         if(note.getPriority().equals("Important"))
-         holder.cardViewLayout.setBackgroundColor(Color.parseColor("#FF4500"));
+         holder.cardViewLayout.setBackgroundColor(Color.parseColor("#FFCB00"));
         if(note.getPriority().equals("Urgent"))
-            holder.cardViewLayout.setBackgroundColor(Color.parseColor("#ff0000"));
+            holder.cardViewLayout.setBackgroundColor(Color.parseColor("#32B92D"));
         if(note.getPriority().equals("default"))
-            holder.cardViewLayout.setBackgroundColor(Color.parseColor("#2196b3"));
+            holder.cardViewLayout.setBackgroundColor(Color.parseColor("#32CBFF"));
 
-        holder.note.setText("Note :" + notes);
-        holder.title.setText("Title :" + title);
+        holder.note.setText(notes);
+        holder.title.setText(title);
 
     }
 //    // Custom method to get a random number between a range
@@ -94,6 +96,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                 @Override
                 public void onClick(View view) {
                     p = getLayoutPosition();
+
                     Toast.makeText(itemView.getContext(), "Edit Note", Toast.LENGTH_SHORT).show();
                     NoteList note = noteList.get(p);
                     editNoteId = note.getId();
@@ -115,10 +118,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
 //            super.onCreateContextMenu(menu, v, menuInfo);
             menu.setHeaderTitle("Options:");
-            MenuItem remove = menu.add(0, v.getId(), 0, "Remove Note");//groupId, itemId, order, title
-            MenuItem normal = menu.add(0, v.getId(), 0, "Mark as Normal");
-            MenuItem vImp = menu.add(0, v.getId(), 0, "Mark as Important");
             MenuItem imp = menu.add(0, v.getId(), 0, "Mark as Urgent");
+            MenuItem vImp = menu.add(0, v.getId(), 0, "Mark as Important");
+            MenuItem normal = menu.add(0, v.getId(), 0, "Mark as Normal");
+            MenuItem remove = menu.add(0, v.getId(), 0, "Remove Note");//groupId, itemId, order, title
             MenuItem cancel = menu.add(0, v.getId(), 0, "Cancel");
             remove.setOnMenuItemClickListener(onEditMenu);
             normal.setOnMenuItemClickListener(onEditMenu);
@@ -148,8 +151,8 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                     priorityNoteId = note.getId();
                     priorityNote = note.getNote();
                     priorityNoteTitle = note.getTitle();
-                    note.setPriority("Normal");
-                    priorityNotePriority="Normal";
+                    note.setPriority("default");
+                    priorityNotePriority="default";
                     AddNoteFragment.editNote(priorityNoteId,priorityNoteTitle,priorityNote,priorityNotePriority);
                     Intent intent = new Intent(context, HomeActivity.class);
                     context.startActivity(intent);

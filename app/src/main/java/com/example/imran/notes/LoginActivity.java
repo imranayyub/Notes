@@ -3,6 +3,7 @@ package com.example.imran.notes;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
@@ -14,6 +15,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -24,11 +28,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.plus.Plus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 
@@ -36,9 +42,10 @@ import static com.example.imran.notes.HomeActivity.databaseNote;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
 
+    public static SharedPreferences pref;
+
     private static final String TAG = LoginActivity.class.getSimpleName();
     private static final int RC_SIGN_IN = 007;
-    public static int singOut = 0;
     public static GoogleApiClient mGoogleApiClient;
     private Context context;
     public static GoogleSignInClient googleSignInClient;
@@ -46,7 +53,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
     public static String userName, email, userPic;
-
+    public static Boolean login = false;
 
     public DatabaseReference databaseUser;
 
@@ -62,6 +69,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 //Configures sign-in to request the user's ID, email address, and basic profile.
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestIdToken("155298904057-h9ilq6caimp9j3uuptogiah5cmpv1u18.apps.googleusercontent.com")
                 .build();
 // Builds a GoogleSignInClient with the options specified by gso.
         mGoogleApiClient = new GoogleApiClient.Builder(this).addOnConnectionFailedListener(this)
@@ -72,6 +80,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         databaseUser = FirebaseDatabase.getInstance().getReference("User");
 
+        //checks if user is already loggedin and perform suitable action.
+        try {
+            pref = getApplicationContext().getSharedPreferences("MyPref", 0);
+            if (pref.getBoolean("login", false) == true) {
+                signIn();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //oncClick method to perform action according to the button being clicked.
@@ -129,11 +146,36 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 userPic = "Nopic";
             }
 
+//trying to get the token.
+            String token=acct.getIdToken();
+
+
+//            final String SCOPES = " https://www.googleapis.com/auth/plus.profile.emails.read ";
+//
+//            try {
+//                token = GoogleAuthUtil.getToken(
+//                        getApplicationContext(), acct.getEmail(),
+//                        "oauth2:" + SCOPES);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (GoogleAuthException e) {
+//                e.printStackTrace();
+//            }
+
+            //putting data in SharedPreferences.
+            pref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
+            SharedPreferences.Editor editor = pref.edit();
+            login = true;
+            editor.putBoolean("login", login);
+            editor.commit();
+
             //Creating intent to HomeActivity.
             Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
             addUser();
+            mProgressDialog.dismiss();
 //            Starting HomeActivity.
             startActivity(intent);
+            overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
             finish();
         }
 

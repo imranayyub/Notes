@@ -17,6 +17,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import static com.example.imran.notes.HomeActivity.databaseNote;
+import static com.example.imran.notes.HomeActivity.fab;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.MyAdapter.editNote;
 import static com.example.imran.notes.MyAdapter.editNoteId;
@@ -49,6 +50,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         noteTitle = (EditText) getActivity().findViewById(R.id.noteTitle);
         addNote = (Button) getActivity().findViewById(R.id.addNote);
         cancel = (Button) getActivity().findViewById(R.id.cancel);
+        fab.setVisibility(View.INVISIBLE);
         if (editNoteId != null) {
             note.setText(editNote);
             noteTitle.setText(editNoteTitle);
@@ -78,20 +80,25 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                     Intent intent;
                     addNote();
                     intent = new Intent(getActivity(), HomeActivity.class);
+                    fab.setVisibility(View.VISIBLE);
 //                    Bundle bundle = new Bundle();
 //                    bundle.putString("Addnote", notes);
 //                    bundle.putString("Title", title);
 //                    bundle.putInt("add", 1);
 //                    intent.putExtras(bundle);
                     startActivity(intent);
+                    getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
+
                 }
                 break;
             }
             case R.id.cancel: {
                 editNoteId = null;
                 Intent intent;
+                fab.setVisibility(View.VISIBLE);
                 intent = new Intent(getActivity(), HomeActivity.class);
                 startActivity(intent);
+                getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
                 Toast.makeText(getActivity(), "Cancelled", Toast.LENGTH_SHORT).show();
                 break;
 
@@ -103,7 +110,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     //adds note in the Firebase realtime database.
     public void addNote() {
         String nId = databaseNote.push().getKey();
-        NoteList noteList = new NoteList(nId, title, notes,"default");
+        NoteList noteList = new NoteList(nId, title, notes,"default","");
         databaseNote.child(nId).setValue(noteList);
         Toast.makeText(getActivity(), "Realtime Database!!!", Toast.LENGTH_SHORT).show();
 
@@ -112,7 +119,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     public static void editNote(String editId, String editNoteTitle, String editNote,String priority) {
         editNoteId = null;
 //        DatabaseReference editreference;
-        NoteList noteList = new NoteList(editId, editNoteTitle, editNote,priority);
+        NoteList noteList = new NoteList(editId, editNoteTitle, editNote,priority,"");
 //        editreference = FirebaseDatabase.getInstance().getReference("NoteList").child(editId);
         databaseNote.child(editId).setValue(noteList);
 //        Toast.makeText(getActivity(), "Updated Realtime Database!!!", Toast.LENGTH_SHORT).show();

@@ -6,13 +6,14 @@ package com.example.imran.notes;
 
 public class NoteList {
     String title, note;
-    String id,priority;
+    String id,priority,date;
 
-    public NoteList(String id, String title, String note,String priority) {
+    public NoteList(String title, String note, String id, String priority, String date) {
         this.title = title;
         this.note = note;
         this.id = id;
-        this.priority=priority;
+        this.priority = priority;
+        this.date = date;
     }
 
     public NoteList() {
@@ -48,5 +49,13 @@ public class NoteList {
 
     public void setPriority(String priority) {
         this.priority = priority;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 }
