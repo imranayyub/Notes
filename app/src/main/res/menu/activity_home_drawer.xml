@@ -7,21 +7,11 @@
         <item
             android:id="@+id/home"
             android:icon="@drawable/homeicon"
-            android:title="All Notes" />
+            android:title="My Notes" />
         <item
-            android:id="@+id/urgentBn"
-            android:icon="@drawable/urgentnote"
-            android:title="Urgent Notes" />
-        <item
-            android:id="@+id/importantBn"
-            android:icon="@drawable/importantnote"
-            android:title="Important Notes" />
-
-        <item
-            android:id="@+id/normalBn"
-            android:icon="@drawable/normalnote1"
-            android:title="Normal Notes" />
-
+            android:id="@+id/sharedNotes"
+            android:icon="@drawable/share"
+            android:title="Shared Notes" />
 
         <item
             android:id="@+id/logoutBn"

@@ -5,6 +5,7 @@ import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.design.widget.FloatingActionButton;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +22,6 @@ import static com.example.imran.notes.HomeActivity.fab;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.MyAdapter.editNote;
 import static com.example.imran.notes.MyAdapter.editNoteId;
-import static com.example.imran.notes.MyAdapter.editNotePrioirty;
 import static com.example.imran.notes.MyAdapter.editNoteTitle;
 
 /**
@@ -30,10 +30,10 @@ import static com.example.imran.notes.MyAdapter.editNoteTitle;
 
 public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
-    EditText note, noteTitle;
+    EditText note, noteTitle,noteTag;
     Button addNote, cancel;
-    String notes, title;
-
+    String notes, title,tag;
+    FloatingActionButton addColor;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,9 +47,11 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         note = (EditText) getActivity().findViewById(R.id.note);
+        noteTag = (EditText) getActivity().findViewById(R.id.noteTag);
         noteTitle = (EditText) getActivity().findViewById(R.id.noteTitle);
         addNote = (Button) getActivity().findViewById(R.id.addNote);
         cancel = (Button) getActivity().findViewById(R.id.cancel);
+        addColor=(FloatingActionButton)getActivity().findViewById(R.id.addColor);
         fab.setVisibility(View.INVISIBLE);
         if (editNoteId != null) {
             note.setText(editNote);
@@ -68,10 +70,11 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
             case R.id.addNote: {
                 notes = note.getText().toString();
                 title = noteTitle.getText().toString();
+                tag=noteTag.getText().toString();
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else if (editNoteId != null) {
-                    editNote(editNoteId, title, notes,editNotePrioirty);
+                    editNote(editNoteId, title, notes,tag);
                     Intent intent;
                     intent = new Intent(getActivity(), HomeActivity.class);
                     startActivity(intent);
@@ -103,6 +106,10 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 break;
 
             }
+            case R.id.addColor:{
+
+                break;
+            }
         }
     }
 
@@ -110,7 +117,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     //adds note in the Firebase realtime database.
     public void addNote() {
         String nId = databaseNote.push().getKey();
-        NoteList noteList = new NoteList(nId, title, notes,"default","");
+        NoteList noteList = new NoteList(nId, title, notes,tag);
         databaseNote.child(nId).setValue(noteList);
         Toast.makeText(getActivity(), "Realtime Database!!!", Toast.LENGTH_SHORT).show();
 
@@ -119,7 +126,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     public static void editNote(String editId, String editNoteTitle, String editNote,String priority) {
         editNoteId = null;
 //        DatabaseReference editreference;
-        NoteList noteList = new NoteList(editId, editNoteTitle, editNote,priority,"");
+        NoteList noteList = new NoteList(editId, editNoteTitle, editNote,priority);
 //        editreference = FirebaseDatabase.getInstance().getReference("NoteList").child(editId);
         databaseNote.child(editId).setValue(noteList);
 //        Toast.makeText(getActivity(), "Updated Realtime Database!!!", Toast.LENGTH_SHORT).show();
@@ -131,3 +138,4 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
     }
 }
+//onnotfiydatachanged.

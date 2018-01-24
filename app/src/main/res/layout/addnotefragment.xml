@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/addNoteFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,19 +11,27 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginTop="5dp"
+        android:backgroundTint="#0000"
         android:gravity="start"
         android:hint="Title"
-        android:backgroundTint="#0000"
-        android:singleLine="true"
         android:maxLines="1"
+        android:singleLine="true"
         android:textAlignment="viewStart"
         android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/noteTag"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="55dp"
+        android:gravity="start"
+        android:hint="Tag..." />
 
     <EditText
         android:id="@+id/note"
         android:layout_width="match_parent"
         android:layout_height="400dp"
-        android:layout_marginTop="55dp"
+        android:layout_marginTop="105dp"
         android:gravity="start"
         android:hint="Take a note..." />
 
@@ -51,6 +60,15 @@
             android:layout_weight="1"
             android:background="@drawable/mybutton"
             android:text="Cancel" />
+
     </LinearLayout>
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/addColor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_gravity="bottom|end"
+        android:layout_marginBottom="100dp"
+        android:layout_marginRight="10dp"
+        app:fabSize="mini"
+        app:srcCompat="@drawable/pantone" />
 </FrameLayout>

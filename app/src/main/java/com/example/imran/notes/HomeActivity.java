@@ -7,15 +7,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -23,13 +18,10 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -44,15 +36,14 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 import static com.example.imran.notes.LoginActivity.email;
 import static com.example.imran.notes.LoginActivity.login;
 import static com.example.imran.notes.LoginActivity.pref;
-import static com.example.imran.notes.LoginActivity.userId;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.LoginActivity.userPic;
 import static com.example.imran.notes.MyAdapter.editNoteId;
+import static com.example.imran.notes.TagAdapter.byTags;
 
 
 public class HomeActivity extends AppCompatActivity
@@ -67,8 +58,10 @@ public class HomeActivity extends AppCompatActivity
     FragmentManager manager = getFragmentManager();    //Initializing Fragment Manager.
     AddNoteFragment Fragment = new AddNoteFragment();
 
-    RecyclerView recyclerView;
+    RecyclerView recyclerView, tagRecyclerView;
     ArrayList<NoteList> noteList = new ArrayList<>();
+    ArrayList<String> tagList = new ArrayList<>();
+    ArrayList<NoteList> byTag = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,8 +76,8 @@ public class HomeActivity extends AppCompatActivity
         //getting date in day date month yy format.
         DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy, HH:mm");
         String date = df.format(Calendar.getInstance().getTime());
-               System.out.print(date);
-               Log.i("date",date);
+        System.out.print(date);
+        Log.i("date", date);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(this);
@@ -115,10 +108,9 @@ public class HomeActivity extends AppCompatActivity
         names = (TextView) header.findViewById(R.id.names);
         names.setText(userName);
         emails.setText(email);
-        if (userPic.equals("Nopic")){
+        if (userPic.equals("Nopic")) {
 //            imageView.setBackgroundResource(R.drawable.noic1);
-        }
-        else {
+        } else {
             Glide.with(getApplicationContext()).load(userPic)
                     .thumbnail(0.5f)
                     .crossFade()
@@ -136,6 +128,7 @@ public class HomeActivity extends AppCompatActivity
 
         //finds recyclerView in the xml.
         recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
+        tagRecyclerView = (RecyclerView) this.findViewById(R.id.tagRecyclerView);
 
     }
 
@@ -180,29 +173,15 @@ public class HomeActivity extends AppCompatActivity
         int id = item.getItemId();
         switch (id) {
             case R.id.home: {
-                getSupportActionBar().setTitle("Home");
+                getSupportActionBar().setTitle("My Notes");
                 fab.setVisibility(View.VISIBLE);
                 onStart();
                 break;
             }
 
-            case R.id.importantBn: {
-                getSupportActionBar().setTitle("Important Notes");
-                fab.setVisibility(View.INVISIBLE);
-                priorityNotes("Important");
-                break;
-            }
-            case R.id.urgentBn: {
-                fab.setVisibility(View.INVISIBLE);
-                getSupportActionBar().setTitle("Urgent Notes");
-                priorityNotes("Urgent");
-                break;
-            }
+            case R.id.sharedNotes: {
+                getSupportActionBar().setTitle("Shared Notes");
 
-            case R.id.normalBn: {
-                fab.setVisibility(View.INVISIBLE);
-                getSupportActionBar().setTitle("Normal Notes");
-                priorityNotes("default");
                 break;
             }
             case R.id.logoutBn: {
@@ -257,6 +236,8 @@ public class HomeActivity extends AppCompatActivity
                     for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
                         NoteList noteLists = notesnapshot.getValue(NoteList.class);
                         noteList.add(noteLists);
+                        if(!noteLists.getTag().equals(""))
+                        tagList.add(noteLists.getTag());
                     }
 
                     StaggeredGridLayoutManager staggeredGridLayoutManager;
@@ -270,6 +251,17 @@ public class HomeActivity extends AppCompatActivity
 //                registerForContextMenu(recyclerView);
                     recyclerView.setAdapter(adapter);
 
+                    StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+                    tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                            StaggeredGridLayoutManager.HORIZONTAL);
+                    tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                    tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+                    TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
+                    tagRecyclerView.setAdapter(tagAdapter);
+
+                    if (byTags != null) {
+                        showByTag(byTags);
+                    }
                 }
 
                 @Override
@@ -294,37 +286,37 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-    public void priorityNotes(final String priority) {
-        databaseNote.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                noteList.clear();
-                int i = 0;
-                for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
-                    NoteList noteLists = notesnapshot.getValue(NoteList.class);
-                    if (noteLists.getPriority().equals(priority)) {
-                        noteList.add(i, noteLists);
-                        i++;
-                    }
-                }
-                StaggeredGridLayoutManager staggeredGridLayoutManager;
-                staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-                        StaggeredGridLayoutManager.VERTICAL);
-                recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-
-                MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
-//                registerForContextMenu(recyclerView);
-                recyclerView.setAdapter(adapter);
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
+//    public void priorityNotes(final String priority) {
+//        databaseNote.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                noteList.clear();
+//                int i = 0;
+//                for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
+//                    NoteList noteLists = notesnapshot.getValue(NoteList.class);
+//                    if (noteLists.getPriority().equals(priority)) {
+//                        noteList.add(i, noteLists);
+//                        i++;
+//                    }
+//                }
+//                StaggeredGridLayoutManager staggeredGridLayoutManager;
+//                staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+//                        StaggeredGridLayoutManager.VERTICAL);
+//                recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+//                recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
+//
+//                MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
+////                registerForContextMenu(recyclerView);
+//                recyclerView.setAdapter(adapter);
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
+//    }
 
     //show dialog on logout.
     void logoutDialog() {
@@ -370,9 +362,29 @@ public class HomeActivity extends AppCompatActivity
             }
         });
         // Showing Alert Message
-            alertDialog.show();
+        alertDialog.show();
 
     }
 
+    public void showByTag(String tag) {
+//        for (int i = 0; i < noteList.size(); i++)
+        for (NoteList n : noteList) {
+            if ((n.getTag()).equals(tag)) {
+                byTag.add(n);
+            }
+        }
+        StaggeredGridLayoutManager staggeredGridLayoutManager;
+        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                StaggeredGridLayoutManager.VERTICAL);
+        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
 
+
+        MyAdapter adapter = new MyAdapter(HomeActivity.this, byTag);
+//                registerForContextMenu(recyclerView);
+
+        recyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        byTags = null;
+    }
 }
