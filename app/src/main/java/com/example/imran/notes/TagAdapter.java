@@ -7,10 +7,16 @@ import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+
+import static com.example.imran.notes.HomeActivity.adapter;
+import static com.example.imran.notes.HomeActivity.recyclerView;
+import static com.example.imran.notes.MyAdapter.noteList;
+import static com.google.android.gms.internal.zzagr.runOnUiThread;
 
 /**
  * Created by imran on 24/1/18.
@@ -21,7 +27,6 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
     Context context;
     public static ArrayList<String> tagList;
     public static String byTags = null;
-
     //getting the context and ride list with constructor
     public TagAdapter(Context context, ArrayList<String> tagList) {
         this.context = (Context) context;
@@ -52,10 +57,11 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
 
 
     //MyHolder class describes an item View and space with the recyclerView(Finds item within cardView Layout).
-    public static class MyHolder extends RecyclerView.ViewHolder {
+    public class MyHolder extends RecyclerView.ViewHolder {
         TextView tag;
-        Context context;
+        public Context context;
         int p;
+        ArrayList<NoteList> byTag = new ArrayList<>();
 
         public MyHolder(final View itemView) {
             super(itemView);
@@ -68,8 +74,21 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
                 public void onClick(View view) {
                     p = getLayoutPosition();
                     byTags = tagList.get(p);
-//                    Intent intent = new Intent(context, HomeActivity.class);
-//                    context.startActivity(intent);
+//                    for (NoteList n : noteList) {
+//                        if ((n.getTag()).equals(tagList.get(p))) {
+//                            byTag.add(n);
+//                        }
+//                    }
+
+//                    LayoutInflater mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+//                    view = mInflater.inflate(R.layout.content_home,null, false);
+//                    RecyclerView recyclerView3;
+//                    recyclerView3=view.findViewById(R.id.recyclerView);
+//
+//                    MyAdapter myAdapter=new MyAdapter(context,byTag);
+//                    recyclerView3.setAdapter(myAdapter);
+                    Intent intent = new Intent(context, HomeActivity.class);
+                    context.startActivity(intent);
 
                 }
             });

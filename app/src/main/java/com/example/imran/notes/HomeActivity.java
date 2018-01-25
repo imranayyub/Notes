@@ -58,10 +58,11 @@ public class HomeActivity extends AppCompatActivity
     FragmentManager manager = getFragmentManager();    //Initializing Fragment Manager.
     AddNoteFragment Fragment = new AddNoteFragment();
 
-    RecyclerView recyclerView, tagRecyclerView;
+    public static RecyclerView recyclerView, tagRecyclerView;
     ArrayList<NoteList> noteList = new ArrayList<>();
     ArrayList<String> tagList = new ArrayList<>();
     ArrayList<NoteList> byTag = new ArrayList<>();
+    public static MyAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -236,8 +237,8 @@ public class HomeActivity extends AppCompatActivity
                     for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
                         NoteList noteLists = notesnapshot.getValue(NoteList.class);
                         noteList.add(noteLists);
-                        if(!noteLists.getTag().equals(""))
-                        tagList.add(noteLists.getTag());
+                        if (!noteLists.getTag().equals(""))
+                            tagList.add(noteLists.getTag());
                     }
 
                     StaggeredGridLayoutManager staggeredGridLayoutManager;
@@ -247,7 +248,7 @@ public class HomeActivity extends AppCompatActivity
                     recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
 
 
-                    MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
+                    adapter = new MyAdapter(HomeActivity.this, noteList);
 //                registerForContextMenu(recyclerView);
                     recyclerView.setAdapter(adapter);
 
@@ -258,10 +259,11 @@ public class HomeActivity extends AppCompatActivity
                     tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
                     TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
                     tagRecyclerView.setAdapter(tagAdapter);
-
                     if (byTags != null) {
                         showByTag(byTags);
                     }
+
+
                 }
 
                 @Override
@@ -367,7 +369,6 @@ public class HomeActivity extends AppCompatActivity
     }
 
     public void showByTag(String tag) {
-//        for (int i = 0; i < noteList.size(); i++)
         for (NoteList n : noteList) {
             if ((n.getTag()).equals(tag)) {
                 byTag.add(n);
@@ -384,7 +385,7 @@ public class HomeActivity extends AppCompatActivity
 //                registerForContextMenu(recyclerView);
 
         recyclerView.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
+//        adapter.notifyDataSetChanged();
         byTags = null;
     }
 }

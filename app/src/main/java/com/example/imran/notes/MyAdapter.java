@@ -27,7 +27,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
     Context context;
 
     //we are storing all the rides in a list
-    private static ArrayList<NoteList> noteList;
+    public static ArrayList<NoteList> noteList;
     public static String editNoteId, editNoteTitle, editNote, editNoteTag;
 
     //getting the context and ride list with constructor
@@ -70,8 +70,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
         return noteList.size();
     }
 
+
     //MyHolder class describes an item View and space with the recyclerView(Finds item within cardView Layout).
-    public static class MyHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
+    public class MyHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
 
         TextView note, title, tag;
         CardView cardViewLayout;

@@ -49,7 +49,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     public static GoogleApiClient mGoogleApiClient;
     private Context context;
     public static GoogleSignInClient googleSignInClient;
-    //    private Context context;
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
     public static String userName, email, userPic;

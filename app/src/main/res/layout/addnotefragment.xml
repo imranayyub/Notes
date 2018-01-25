@@ -30,7 +30,7 @@
     <EditText
         android:id="@+id/note"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="250dp"
         android:layout_marginTop="105dp"
         android:gravity="start"
         android:hint="Take a note..." />
@@ -63,12 +63,101 @@
 
     </LinearLayout>
 
+
+    <HorizontalScrollView
+        android:id="@+id/colormenu"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginBottom="100dp"
+        android:layout_marginTop="400dp"
+        android:background="#00326e	">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="8dp"
+            android:paddingLeft="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="COLOR:"
+                android:textColor="#ffffff"
+                android:textStyle="italic" />
+
+            <Button
+                android:id="@+id/defaultcolor"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="20dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#ffffff" />
+
+            <Button
+                android:id="@+id/color1"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#893F45" />
+
+            <Button
+                android:id="@+id/color2"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#ffac99" />
+
+            <Button
+                android:id="@+id/color3"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#87A96B" />
+
+            <Button
+                android:id="@+id/color4"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#3D2B1F" />
+
+            <Button
+                android:id="@+id/color5"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#004225" />
+
+            <Button
+                android:id="@+id/color6"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#800020" />
+
+            <Button
+                android:id="@+id/color7"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginLeft="10dp"
+                android:background="@drawable/circle"
+                android:backgroundTint="#614051" />
+        </LinearLayout>
+    </HorizontalScrollView>
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/addColor"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" android:layout_gravity="bottom|end"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
         android:layout_marginBottom="100dp"
         android:layout_marginRight="10dp"
         app:fabSize="mini"
         app:srcCompat="@drawable/pantone" />
+
 </FrameLayout>
