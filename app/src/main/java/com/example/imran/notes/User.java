@@ -1,43 +1,45 @@
 package com.example.imran.notes;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Created by imran on 16/1/18.
  */
 
 public class User {
-String uId,username,password;
 
-    public User(String uId, String username, String password) {
-        this.uId = uId;
-        this.username = username;
-        this.password = password;
+    @SerializedName("email")
+    @Expose
+    String email;
+
+    @SerializedName("token")
+    @Expose
+    String token;
+
+    public User(String email, String token) {
+        this.email = email;
+        this.token = token;
     }
 
-    public User()
-    {
+    public User() {
 
     }
-    public String getuId() {
-        return uId;
+
+    public String getEmail() {
+        return email;
     }
 
-    public String getUsername() {
-        return username;
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getToken() {
+        return token;
     }
 
-    public void setuId(String uId) {
-        this.uId = uId;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setToken(String token) {
+        this.token = token;
     }
 }

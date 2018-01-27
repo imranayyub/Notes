@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,8 +23,22 @@ import android.widget.Toast;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.io.IOException;
+import java.util.List;
+
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 import static com.example.imran.notes.HomeActivity.databaseNote;
 import static com.example.imran.notes.HomeActivity.fab;
+import static com.example.imran.notes.LoginActivity.email;
+import static com.example.imran.notes.LoginActivity.serverToken;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.MyAdapter.editNote;
 import static com.example.imran.notes.MyAdapter.editNoteId;
@@ -36,7 +52,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
     EditText note, noteTitle, noteTag;
     Button addNote, cancel;
-    String notes, title, tag, changecolor, color;
+    String notes, title, tag,  color;
+    static String changecolor;
     FloatingActionButton addColor;
     Button color1, color2, color3, color4, color5, color6, color7, defaultcolor;
     HorizontalScrollView colormenu;
@@ -61,7 +78,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         cancel = (Button) getActivity().findViewById(R.id.cancel);
         addColor = (FloatingActionButton) getActivity().findViewById(R.id.addColor);
 
-        addNoteFrameLyout=(FrameLayout)getActivity().findViewById(R.id.addNoteFragment);
+        addNoteFrameLyout = (FrameLayout) getActivity().findViewById(R.id.addNoteFragment);
         fab.setVisibility(View.INVISIBLE);
         if (editNoteId != null) {
             note.setText(editNote);
@@ -106,21 +123,15 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else if (editNoteId != null) {
-                    editNote(editNoteId, title, notes, tag);
+//                    editNote(editNoteId, title, notes, tag);
                     Intent intent;
                     intent = new Intent(getActivity(), HomeActivity.class);
                     startActivity(intent);
                 } else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
-                    addNote();
+                    addNote(email, title, notes, changecolor, tag);
                     intent = new Intent(getActivity(), HomeActivity.class);
-//                    fab.setVisibility(View.VISIBLE);
-//                    Bundle bundle = new Bundle();
-//                    bundle.putString("Addnote", notes);
-//                    bundle.putString("Title", title);
-//                    bundle.putInt("add", 1);
-//                    intent.putExtras(bundle);
                     startActivity(intent);
                     getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
 
@@ -143,8 +154,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 if (count == 0) {
                     count++;
                     colormenu.setVisibility(View.VISIBLE);
-                }
-                else {
+                } else {
                     colormenu.setVisibility(View.GONE);
                     count--;
                 }
@@ -207,27 +217,80 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
 
     //adds note in the Firebase realtime database.
-    public void addNote() {
-        String nId = databaseNote.push().getKey();
-        NoteList noteList = new NoteList(nId, title, notes, tag);
-        databaseNote.child(nId).setValue(noteList);
-        Toast.makeText(getActivity(), "Realtime Database!!!", Toast.LENGTH_SHORT).show();
+    public void addNote(String email, String title, String note, String color, String tag) {
+
+
+//HttpCLient to Add Authorization Header.
+        OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(
+                        new Interceptor() {
+                            @Override
+                            public okhttp3.Response intercept(Chain chain) throws IOException {
+                                Request request = chain.request().newBuilder()
+                                        .addHeader("authorization", "bearer " + serverToken).build();
+                                return chain.proceed(request);
+                            }
+                        }).build();
+        //Retrofit to retrieve JSON data from server.
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ApiInterface.BASE_URL)
+                .client(defaultHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                .build();
+
+        ApiInterface apiService = retrofit.create(ApiInterface.class);
+        try {
+            NoteList noteList = new NoteList(email, title, note, color, tag);
+            apiService.addNote(noteList).enqueue(new Callback<NoteList>() {
+                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                @Override
+                public void onResponse(Call<NoteList> call, Response<NoteList> response) {
+                    if (response.isSuccessful()) {
+                        Log.i("here:", "post submitted to API." + response.body().toString());
+                        NoteList noteList = response.body();
+                       Intent intent = new Intent(getActivity(), HomeActivity.class);
+                        startActivity(intent);
+                        getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
+
+                        Toast.makeText(getActivity(), "Notes..!! ", Toast.LENGTH_SHORT).show();
+
+                    } else if (response.code() == 500) {
+                        Toast.makeText(getActivity(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                    } else if (response.code() == 404) {
+                        Toast.makeText(getActivity(), "wrong..", Toast.LENGTH_SHORT).show();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(Call<NoteList> call, Throwable t) {
+                    t.printStackTrace();
+                    Log.e("here", "Unable to submit post to API.");
+                    Toast.makeText(getActivity(), "failed ", Toast.LENGTH_SHORT).show();
+
+                }
+
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
-    public static void editNote(String editId, String editNoteTitle, String editNote, String priority) {
-        editNoteId = null;
-//        DatabaseReference editreference;
-        NoteList noteList = new NoteList(editId, editNoteTitle, editNote, priority);
-//        editreference = FirebaseDatabase.getInstance().getReference("NoteList").child(editId);
-        databaseNote.child(editId).setValue(noteList);
-//        Toast.makeText(getActivity(), "Updated Realtime Database!!!", Toast.LENGTH_SHORT).show();
-
-    }
-
-    public static void removeNote(String deleteNoteId) {
-        databaseNote.child(deleteNoteId).removeValue();
-
-    }
+//    public static void editNote(String editId, String editNoteTitle, String editNote, String priority) {
+//        editNoteId = null;
+////        DatabaseReference editreference;
+//        NoteList noteList = new NoteList(editId, editNoteTitle, editNote, priority);
+////        editreference = FirebaseDatabase.getInstance().getReference("NoteList").child(editId);
+//        databaseNote.child(editId).setValue(noteList);
+////        Toast.makeText(getActivity(), "Updated Realtime Database!!!", Toast.LENGTH_SHORT).show();
+//
+//    }
+//
+//    public static void removeNote(String deleteNoteId) {
+//        databaseNote.child(deleteNoteId).removeValue();
+//
+//    }
 }
 //onnotfiydatachanged.

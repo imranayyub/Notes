@@ -48,16 +48,22 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
     @Override
     public void onBindViewHolder(MyHolder holder, int position) {
         //getting the ride of the specified position
-        String notes, title, tags;
+        String notes, title, tags,color;
         NoteList note = noteList.get(position);
         notes = note.getNote();
         title = note.getTitle();
         tags = note.getTag();
-
+        color=note.getColor();
         holder.tag.setText(tags);
         holder.note.setText(notes);
         holder.title.setText(title);
-
+        if(color==null)
+        {
+            holder.cardViewLayout.setBackgroundColor(Color.parseColor("#ffffff"));
+        }
+        else {
+            holder.cardViewLayout.setBackgroundColor(Color.parseColor(color));
+        }
     }
 //    // Custom method to get a random number between a range
 //    protected int getRandomIntInRange(int max, int min){
@@ -134,8 +140,8 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
                     p = getAdapterPosition();
                     NoteList note = noteList.get(p);
-                    deleteNoteId = note.getId();
-                    AddNoteFragment.removeNote(deleteNoteId);
+//                    deleteNoteId = note.getId();
+//                    AddNoteFragment.removeNote(deleteNoteId);
                     Intent intent = new Intent(context, HomeActivity.class);
                     context.startActivity(intent);
                     Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
@@ -146,7 +152,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                     p = getLayoutPosition();
                     Toast.makeText(itemView.getContext(), "Edit Note", Toast.LENGTH_SHORT).show();
                     NoteList note = noteList.get(p);
-                    editNoteId = note.getId();
+//                    editNoteId = note.getId();
                     editNote = note.getNote();
                     editNoteTitle = note.getTitle();
                     editNoteTag = note.getTag();
