@@ -76,9 +76,10 @@ public class HomeActivity extends AppCompatActivity
     OkHttpClient defaultHttpClient;
 
     public static RecyclerView recyclerView, tagRecyclerView;
-    ArrayList<NoteList> noteLists = new ArrayList<>();
-    //    ArrayList<String> tagList = new ArrayList<>();
-//    ArrayList<NoteList> byTag = new ArrayList<>();
+    public static ArrayList<NoteList> noteLists = new ArrayList<>();
+    public static ArrayList<String> tagList = new ArrayList<>();
+    //    ArrayList<SharedNotes> sharedNoteList=new ArrayList<>();
+    //    ArrayList<NoteList> byTag = new ArrayList<>();
     public static MyAdapter adapter;
 
     @Override
@@ -133,72 +134,12 @@ public class HomeActivity extends AppCompatActivity
         recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
         tagRecyclerView = (RecyclerView) this.findViewById(R.id.tagRecyclerView);
 
-//HttpCLient to Add Authorization Header.
-       defaultHttpClient = new OkHttpClient.Builder()
-                .addInterceptor(
-                        new Interceptor() {
-                            @Override
-                            public okhttp3.Response intercept(Chain chain) throws IOException {
-                                Request request = chain.request().newBuilder()
-                                        .addHeader("authorization", "bearer " + serverToken).build();
-                                return chain.proceed(request);
-                            }
-                        }).build();
-        //Retrofit to retrieve JSON data from server.
-        retrofit = new Retrofit.Builder()
-                .baseUrl(ApiInterface.BASE_URL)
-                .client(defaultHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
-                .build();
-
-        ApiInterface apiService = retrofit.create(ApiInterface.class);
-        try {
-            NoteList noteList = new NoteList(email, "title", "note", "color", "tag");
-            apiService.notes(noteList).enqueue(new Callback<List<NoteList>>() {
-                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
-                @Override
-                public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
-                    if (response.isSuccessful()) {
-                        Log.i("here:", "post submitted to API." + response.body().toString());
-                        List<NoteList> noteList = response.body();
-                        for (NoteList n : noteList) {
-                            Log.i("note", n.getNote());
-                            noteLists.add(n);
-                        }
-
-                        StaggeredGridLayoutManager staggeredGridLayoutManager;
-                        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-                                StaggeredGridLayoutManager.VERTICAL);
-                        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-
-                        adapter = new MyAdapter(HomeActivity.this, noteLists);
-//                registerForContextMenu(recyclerView);
-                        recyclerView.setAdapter(adapter);
-//
-
-                        Toast.makeText(getApplicationContext(), "Notes..!! ", Toast.LENGTH_SHORT).show();
-
-                    } else if (response.code() == 500) {
-                        Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
-                    } else if (response.code() == 404) {
-                        Toast.makeText(getApplicationContext(), "wrong..", Toast.LENGTH_SHORT).show();
-                    }
-
-                }
-
-                @Override
-                public void onFailure(Call<List<NoteList>> call, Throwable t) {
-                    t.printStackTrace();
-                    Log.e("here", "Unable to submit post to API.");
-                    Toast.makeText(getApplicationContext(), "failed ", Toast.LENGTH_SHORT).show();
-
-                }
-
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (editNoteId != null) {
+            showAddNoteFragment();
         }
+
+        showNotesAndTags();
+
 
     }
 
@@ -209,7 +150,9 @@ public class HomeActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            onStart();
+            getSupportActionBar().setTitle("My Notes");
+            fab.setVisibility(View.VISIBLE);
+            showNotesAndTags();
 //            super.onBackPressed();
         }
     }
@@ -245,13 +188,14 @@ public class HomeActivity extends AppCompatActivity
             case R.id.home: {
                 getSupportActionBar().setTitle("My Notes");
                 fab.setVisibility(View.VISIBLE);
-                onStart();
+                showNotesAndTags();
                 break;
             }
 
             case R.id.sharedNotes: {
                 getSupportActionBar().setTitle("Shared Notes");
-
+                fab.setVisibility(View.INVISIBLE);
+                showSharedNotes(email);
                 break;
             }
             case R.id.logoutBn: {
@@ -294,58 +238,6 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-//    @Override
-//    protected void onStart() {
-//        super.onStart();
-//        //fetches data from Firebase realtime database.
-//        try {
-//            databaseNote.addValueEventListener(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(DataSnapshot dataSnapshot) {
-//                    noteList.clear();
-//                    for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
-//                        NoteList noteLists = notesnapshot.getValue(NoteList.class);
-//                        noteList.add(noteLists);
-//                        if (!noteLists.getTag().equals(""))
-//                            tagList.add(noteLists.getTag());
-//                    }
-//
-//                    StaggeredGridLayoutManager staggeredGridLayoutManager;
-//                    staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-//                            StaggeredGridLayoutManager.VERTICAL);
-//                    recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-//                    recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-//
-//
-//                    adapter = new MyAdapter(HomeActivity.this, noteList);
-////                registerForContextMenu(recyclerView);
-//                    recyclerView.setAdapter(adapter);
-//
-//                    StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
-//                    tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
-//                            StaggeredGridLayoutManager.HORIZONTAL);
-//                    tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-//                    tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
-//                    TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
-//                    tagRecyclerView.setAdapter(tagAdapter);
-//                    if (byTags != null) {
-//                        showByTag(byTags);
-//                    }
-//
-//
-//                }
-//
-//                @Override
-//                public void onCancelled(DatabaseError databaseError) {
-//
-//                }
-//            });
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//
-//        }
-//    }
-
     //shows AddnoteFragment.
     public void showAddNoteFragment() {
         getSupportActionBar().setTitle("Add Note");
@@ -357,37 +249,6 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-//    public void priorityNotes(final String priority) {
-//        databaseNote.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                noteList.clear();
-//                int i = 0;
-//                for (DataSnapshot notesnapshot : dataSnapshot.getChildren()) {
-//                    NoteList noteLists = notesnapshot.getValue(NoteList.class);
-//                    if (noteLists.getPriority().equals(priority)) {
-//                        noteList.add(i, noteLists);
-//                        i++;
-//                    }
-//                }
-//                StaggeredGridLayoutManager staggeredGridLayoutManager;
-//                staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-//                        StaggeredGridLayoutManager.VERTICAL);
-//                recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-//                recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-//
-//                MyAdapter adapter = new MyAdapter(HomeActivity.this, noteList);
-////                registerForContextMenu(recyclerView);
-//                recyclerView.setAdapter(adapter);
-//
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
-//    }
 
     //show dialog on logout.
     void logoutDialog() {
@@ -457,4 +318,169 @@ public class HomeActivity extends AppCompatActivity
 ////        adapter.notifyDataSetChanged();
 //        byTags = null;
 //    }
+
+    public void showNotesAndTags() {
+        //HttpCLient to Add Authorization Header.
+        defaultHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(
+                        new Interceptor() {
+                            @Override
+                            public okhttp3.Response intercept(Chain chain) throws IOException {
+                                Request request = chain.request().newBuilder()
+                                        .addHeader("authorization", "bearer " + serverToken).build();
+                                return chain.proceed(request);
+                            }
+                        }).build();
+        //Retrofit to retrieve JSON data from server.
+        retrofit = new Retrofit.Builder()
+                .baseUrl(ApiInterface.BASE_URL)
+                .client(defaultHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                .build();
+
+        ApiInterface apiService = retrofit.create(ApiInterface.class);
+        try {
+            NoteList noteList = new NoteList(email, "title", "note", "color", "tag", "");
+            apiService.notes(noteList).enqueue(new Callback<List<NoteList>>() {
+                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                @Override
+                public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
+                    if (response.isSuccessful()) {
+                        Log.i("here:", "post submitted to API." + response.body().toString());
+                        List<NoteList> noteList = response.body();
+                        noteLists.clear();
+                        tagList.clear();
+                        for (NoteList n : noteList) {
+                            Log.i("note", n.getNote());
+                            noteLists.add(n);
+                            if (!n.getTag().equals(""))
+                                tagList.add(n.getTag());
+                        }
+
+                        StaggeredGridLayoutManager staggeredGridLayoutManager;
+                        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                                StaggeredGridLayoutManager.VERTICAL);
+                        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
+
+                        adapter = new MyAdapter(HomeActivity.this, noteLists);
+//                registerForContextMenu(recyclerView);
+                        recyclerView.setAdapter(adapter);
+
+                        StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+                        tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                                StaggeredGridLayoutManager.HORIZONTAL);
+                        tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                        tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+                        TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
+                        tagRecyclerView.setAdapter(tagAdapter);
+
+//                        Toast.makeText(getApplicationContext(), "Notes..!! ", Toast.LENGTH_SHORT).show();
+
+                    } else if (response.code() == 500) {
+                        Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                    } else if (response.code() == 404) {
+                        Toast.makeText(getApplicationContext(), "wrong..", Toast.LENGTH_SHORT).show();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(Call<List<NoteList>> call, Throwable t) {
+                    t.printStackTrace();
+                    Log.e("here", "Unable to submit post to API.");
+                    Toast.makeText(getApplicationContext(), "failed ", Toast.LENGTH_SHORT).show();
+
+                }
+
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    public void showSharedNotes(String email) {
+
+        //HttpCLient to Add Authorization Header.
+        defaultHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(
+                        new Interceptor() {
+                            @Override
+                            public okhttp3.Response intercept(Chain chain) throws IOException {
+                                Request request = chain.request().newBuilder()
+                                        .addHeader("authorization", "bearer " + serverToken).build();
+                                return chain.proceed(request);
+                            }
+                        }).build();
+        //Retrofit to retrieve JSON data from server.
+        retrofit = new Retrofit.Builder()
+                .baseUrl(ApiInterface.BASE_URL)
+                .client(defaultHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                .build();
+
+        ApiInterface apiService = retrofit.create(ApiInterface.class);
+        try {
+            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "","");
+            apiService.sharedNote(sharedNotes).enqueue(new Callback<List<NoteList>>() {
+                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                @Override
+                public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
+                    if (response.isSuccessful()) {
+                        Log.i("here:", "post submitted to API." + response.body().toString());
+                        List<NoteList> noteList = response.body();
+                        tagList.clear();
+                        noteLists.clear();
+                        for (NoteList n : noteList) {
+                            Log.i("note", n.getNote());
+                            noteLists.add(n);
+                            if (!n.getTag().equals(""))
+                                tagList.add(n.getTag());
+                        }
+
+                        StaggeredGridLayoutManager staggeredGridLayoutManager;
+                        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                                StaggeredGridLayoutManager.VERTICAL);
+                        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
+
+                        adapter = new MyAdapter(HomeActivity.this, noteLists);
+//                registerForContextMenu(recyclerView);
+                        recyclerView.setAdapter(adapter);
+
+                        StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+                        tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                                StaggeredGridLayoutManager.HORIZONTAL);
+                        tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                        tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+                        TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
+                        tagRecyclerView.setAdapter(tagAdapter);
+
+//                        Toast.makeText(getApplicationContext(), "Notes..!! ", Toast.LENGTH_SHORT).show();
+
+                    } else if (response.code() == 500) {
+                        Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                    } else if (response.code() == 404) {
+                        Toast.makeText(getApplicationContext(), "wrong..", Toast.LENGTH_SHORT).show();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(Call<List<NoteList>> call, Throwable t) {
+                    t.printStackTrace();
+                    Log.e("here", "Unable to submit post to API.");
+                    Toast.makeText(getApplicationContext(), "failed ", Toast.LENGTH_SHORT).show();
+
+                }
+
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
 }

@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.util.List;
@@ -41,7 +42,9 @@ import static com.example.imran.notes.LoginActivity.email;
 import static com.example.imran.notes.LoginActivity.serverToken;
 import static com.example.imran.notes.LoginActivity.userName;
 import static com.example.imran.notes.MyAdapter.editNote;
+import static com.example.imran.notes.MyAdapter.editNoteColor;
 import static com.example.imran.notes.MyAdapter.editNoteId;
+import static com.example.imran.notes.MyAdapter.editNoteTag;
 import static com.example.imran.notes.MyAdapter.editNoteTitle;
 
 /**
@@ -83,6 +86,10 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         if (editNoteId != null) {
             note.setText(editNote);
             noteTitle.setText(editNoteTitle);
+            noteTag.setText(editNoteTag);
+            if(editNoteColor!=null)
+            addNoteFrameLyout.setBackgroundColor(Color.parseColor(editNoteColor));//87CEEB
+
         }
         addNote.setOnClickListener(this);
         cancel.setOnClickListener(this);
@@ -120,13 +127,15 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 notes = note.getText().toString();
                 title = noteTitle.getText().toString();
                 tag = noteTag.getText().toString();
+                if(tag==null)
+                    tag="";
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else if (editNoteId != null) {
-//                    editNote(editNoteId, title, notes, tag);
-                    Intent intent;
-                    intent = new Intent(getActivity(), HomeActivity.class);
-                    startActivity(intent);
+                    editNote(email, title, notes,changecolor,tag,editNoteId);
+//                    Intent intent;
+//                    intent = new Intent(getActivity(), HomeActivity.class);
+//                    startActivity(intent);
                 } else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
@@ -164,8 +173,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 //                Snackbar snackbar = Snackbar.make(addNoteFrameLyout, "It will set " +
 //                        "your card view with default color", Snackbar.LENGTH_LONG);
 //                snackbar.show();
-//                color = null;
-//                changecolor = color;
+                color = "#ffffff";
+                changecolor = color;
                 addNoteFrameLyout.setBackgroundColor(Color.parseColor("#ffffff"));//87CEEB
                 break;
             }
@@ -215,6 +224,67 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+    private void editNote(String email, String title, String note, String color, String tag, String editNoteId) {
+
+        //HttpCLient to Add Authorization Header.
+        OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(
+                        new Interceptor() {
+                            @Override
+                            public okhttp3.Response intercept(Chain chain) throws IOException {
+                                Request request = chain.request().newBuilder()
+                                        .addHeader("authorization", "bearer " + serverToken).build();
+                                return chain.proceed(request);
+                            }
+                        }).build();
+        //Retrofit to retrieve JSON data from server.
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ApiInterface.BASE_URL)
+                .client(defaultHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                .build();
+
+        ApiInterface apiService = retrofit.create(ApiInterface.class);
+        try {
+            NoteList noteList = new NoteList(email, title, note, color, tag,editNoteId);
+            apiService.editNote(noteList).enqueue(new Callback<JsonObject>() {
+                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (response.isSuccessful()) {
+                        Log.i("here:", "post submitted to API." + response.body().toString());
+                        MyAdapter.editNoteId=null;
+                        Intent intent = new Intent(getActivity(), HomeActivity.class);
+                        startActivity(intent);
+                        getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
+
+                        Toast.makeText(getActivity(), "Note edit successfully..!! ", Toast.LENGTH_SHORT).show();
+
+                    } else if (response.code() == 500) {
+                        Toast.makeText(getActivity(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                    } else if (response.code() == 404) {
+                        Toast.makeText(getActivity(), "wrong..", Toast.LENGTH_SHORT).show();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    t.printStackTrace();
+                    Log.e("here", "Unable to submit post to API.");
+                    Toast.makeText(getActivity(), "failed ", Toast.LENGTH_SHORT).show();
+
+                }
+
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+    }
+
 
     //adds note in the Firebase realtime database.
     public void addNote(String email, String title, String note, String color, String tag) {
@@ -240,7 +310,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            NoteList noteList = new NoteList(email, title, note, color, tag);
+            NoteList noteList = new NoteList(email, title, note, color, tag,"");
             apiService.addNote(noteList).enqueue(new Callback<NoteList>() {
                 //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
                 @Override
@@ -248,7 +318,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                     if (response.isSuccessful()) {
                         Log.i("here:", "post submitted to API." + response.body().toString());
                         NoteList noteList = response.body();
-                       Intent intent = new Intent(getActivity(), HomeActivity.class);
+                        Intent intent = new Intent(getActivity(), HomeActivity.class);
                         startActivity(intent);
                         getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
 
