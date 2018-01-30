@@ -1,4 +1,4 @@
-package com.example.imran.notes;
+package com.example.imran.notes.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Created by imran on 16/1/18.
  */
-
+//Model for the userDetails.
 public class User {
 
     @SerializedName("email")

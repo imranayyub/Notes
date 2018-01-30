@@ -1,16 +1,15 @@
-package com.example.imran.notes;
+package com.example.imran.notes.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.renderscript.Script;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.text.InputType;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -18,14 +17,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.cast.LaunchOptions;
+import com.example.imran.notes.model.NoteList;
+import com.example.imran.notes.R;
+import com.example.imran.notes.model.SharedNotes;
+import com.example.imran.notes.activities.HomeActivity;
+import com.example.imran.notes.interfaces.ApiInterface;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.JsonObject;
-
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,28 +41,33 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static com.example.imran.notes.HomeActivity.fab;
-import static com.example.imran.notes.HomeActivity.noteLists;
-import static com.example.imran.notes.HomeActivity.tagList;
-import static com.example.imran.notes.HomeActivity.tagRecyclerView;
-import static com.example.imran.notes.LoginActivity.email;
-import static com.example.imran.notes.LoginActivity.serverToken;
-import static com.example.imran.notes.MyFirebaseInstanceIDService.recent_token;
+import static com.example.imran.notes.activities.HomeActivity.isShared;
+import static com.example.imran.notes.activities.HomeActivity.noteLists;
+import static com.example.imran.notes.activities.HomeActivity.pinned;
+import static com.example.imran.notes.activities.HomeActivity.pinnedNote;
+import static com.example.imran.notes.activities.HomeActivity.pinnedNoteLayout;
+import static com.example.imran.notes.activities.HomeActivity.pinnedTag;
+import static com.example.imran.notes.activities.HomeActivity.pinnedTitle;
+import static com.example.imran.notes.activities.HomeActivity.recyclerView;
+import static com.example.imran.notes.activities.HomeActivity.tagList;
+import static com.example.imran.notes.activities.HomeActivity.tagRecyclerView;
+import static com.example.imran.notes.activities.LoginActivity.email;
+import static com.example.imran.notes.activities.LoginActivity.serverToken;
 
 /**
  * Created by Im on 21-11-2017.
  */
 
-public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
-    //this context we will use to inflate the layout
+public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
+    //context used to inflate the layout.
     Context context;
 
-    //we are storing all the rides in a list
-    public static ArrayList<NoteList> noteList;
-    public static String editNoteId, editNoteTitle, editNote, editNoteTag, editNoteColor;
 
-    //getting the context and ride list with constructor
-    public MyAdapter(Context context, ArrayList<NoteList> noteList) {
+    public static ArrayList<NoteList> noteList;
+    public static String editNoteId, editNoteTitle, editNote, editNoteTag, editNoteColor, pinnedNotes, pinnedNoteTag, pinnedNoteTitle, pinnedNoteColor;
+
+    //getting the context and Notelist with constructor
+    public NoteAdapter(Context context, ArrayList<NoteList> noteList) {
         this.context = (Context) context;
         this.noteList = noteList;
     }
@@ -73,6 +80,8 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
         return new MyHolder(view);
     }
 
+
+    //sets data in recyclerView.
     @SuppressLint("ResourceAsColor")
     @Override
     public void onBindViewHolder(MyHolder holder, int position) {
@@ -93,11 +102,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
         }
     }
 
-
-//    // Custom method to get a random number between a range
-//    protected int getRandomIntInRange(int max, int min){
-//        return mRandom.nextInt((max-min)+min)+min;
-//    }
 
     //Function to get the size of List noteList.
     @Override
@@ -123,61 +127,50 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
             cardViewLayout = (CardView) itemView.findViewById(R.id.cardviewlayout);
             context = itemView.getContext();
 
-            //in case any Note is clicked.
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-//                    p = getLayoutPosition();
-//
-//                    Toast.makeText(itemView.getContext(), "Edit Note", Toast.LENGTH_SHORT).show();
-//                    NoteList note = noteList.get(p);
-//                    editNoteId = note.getId();
-//                    editNote = note.getNote();
-//                    editNoteTitle = note.getTitle();
-//                    editNotePrioirty = note.getPriority();
-//                    Intent intent = new Intent(context, HomeActivity.class);
-//                    context.startActivity(intent);
-////                    AddNoteFragment.editNote(editNoteId,editNoteTitle,editNote);
-////                    HomeActivity.showAddNoteFragment();
-
-                }
-            });
+            //registers itemView for ContextMenu.
             itemView.setOnCreateContextMenuListener(this);
 
         }
 
 
+        //Create a context menu and add options in it.
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-//            super.onCreateContextMenu(menu, v, menuInfo);
             menu.setHeaderTitle("Options:");
             MenuItem edit = menu.add(0, v.getId(), 0, "Edit");
-            MenuItem share = menu.add(0, v.getId(), 0, "Share");
-            MenuItem ptt = menu.add(0, v.getId(), 0, "Pin to Top");
+            if (isShared == 0) {
+                MenuItem share = menu.add(0, v.getId(), 0, "Share");
+                share.setOnMenuItemClickListener(onEditMenu);
+                MenuItem ptt = menu.add(0, v.getId(), 0, "Pin to Top");
+                ptt.setOnMenuItemClickListener(onEditMenu);
+
+            }
+
             MenuItem remove = menu.add(0, v.getId(), 0, "Delete Note");//groupId, itemId, order, title
             MenuItem cancel = menu.add(0, v.getId(), 0, "Cancel");
             remove.setOnMenuItemClickListener(onEditMenu);
             edit.setOnMenuItemClickListener(onEditMenu);
-            share.setOnMenuItemClickListener(onEditMenu);
-            ptt.setOnMenuItemClickListener(onEditMenu);
             cancel.setOnMenuItemClickListener(onEditMenu);
         }
 
+        //In case an option is selected from Context Menu.
         private final MenuItem.OnMenuItemClickListener onEditMenu = new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 if (item.getTitle() == "Delete Note") {
                     p = getAdapterPosition();
                     NoteList note = noteList.get(p);
-                    deleteNote(email, note.getNote());
+                    //check if note is sharednote or normal note and performs suitable function.
+                    if (isShared == 1)
+                        deleteSharedNote(email, note.getNote());
+                    else
+                        deleteNote(email, note.getNote());
                     deleteTag = note.getTag();
-                    //                    Intent intent = new Intent(context, HomeActivity.class);
-//                    context.startActivity(intent);
-//                    Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
 
                 } else if (item.getTitle() == "Share") {
                     p = getLayoutPosition();
                     final NoteList note = noteList.get(p);
+                    //creating alert dialog with text input to take email id of recipient.
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                     builder.setTitle("Share Note");
                     // I'm using fragment here so I'm using getView() to provide ViewGroup
@@ -189,16 +182,17 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                     builder.setView(viewInflated);
 
                     // Set up the buttons
+                    //in case ok is pressed.
                     builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
                             String reciever_email = input.getText().toString();
-//String firebaseToken=
-
+                            //shares note with the recipent.
                             shareNote(email, reciever_email, note.getTitle(), note.getNote(), note.getColor(), note.getTag(), FirebaseInstanceId.getInstance().getToken());
                         }
                     });
+                    //else cancel the dialog without any action.
                     builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -212,13 +206,37 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                     p = getLayoutPosition();
                     Toast.makeText(itemView.getContext(), "Edit Note", Toast.LENGTH_SHORT).show();
                     NoteList note = noteList.get(p);
-                    editNoteid(email, note.getNote());
+                    //check if the note is shared or normal.
+                    if (isShared == 1)
+                        editSharedNoteid(email, note.getNote());
+                    else
+                        editNoteid(email, note.getNote());
                     editNote = note.getNote();
                     editNoteTag = note.getTag();
                     editNoteTitle = note.getTitle();
                     editNoteColor = note.getColor();
                 } else if (item.getTitle() == "Pin to Top") {
+                    p = getLayoutPosition();
+                    NoteList note = noteList.get(p);
+                    pinnedNotes = note.getNote();
+                    pinnedNoteTag = note.getTag();
+                    pinnedNoteTitle = note.getTitle();
+                    if (note.getColor() != null)
+                        pinnedNoteColor = note.getColor();
+                    else
+                        pinnedNoteColor = "#ffffff";
 
+                    //storing pinned note data in sharedPreferences.
+                    pinned = context.getSharedPreferences("pinned", 0); // 0 - for private mode
+                    SharedPreferences.Editor editor = pinned.edit();
+                    editor.putBoolean("isPinned", true);
+                    editor.putString("pinnedNote", pinnedNotes);
+                    editor.putString("pinnedNoteTag", pinnedNoteTag);
+                    editor.putString("pinnedNoteTitle", pinnedNoteTitle);
+                    editor.putString("pinnedNoteColor", pinnedNoteColor);
+                    editor.commit();
+                    setPinnedNote(pinnedNoteTitle, pinnedNotes, pinnedNoteTag, pinnedNoteColor);
+                    notifyDataSetChanged();
                 } else if (item.getTitle() == "Cancel") {
                     Toast.makeText(itemView.getContext(), "Cancel", Toast.LENGTH_SHORT).show();
                 } else {
@@ -230,6 +248,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
         };
 
+        //deletes Note from server.
         public void deleteNote(String email, String note) {
 
 
@@ -260,7 +279,74 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
                     public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                         if (response.isSuccessful()) {
                             Log.i("here:", "post submitted to API." + response.body().toString());
-//                            Intent intent = new Intent(context, HomeActivity.class);
+                            //removing note from notelists .
+                            noteLists.remove(p);
+                            //notifies adapter that an item is removed.
+                            notifyItemRemoved(p);
+                            tagList.remove(deleteTag);
+                            //deletes the tag related to the note being deleted.
+                            notifyItemRangeChanged(p, getItemCount());
+                            StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+                            tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                                    StaggeredGridLayoutManager.HORIZONTAL);
+                            tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                            tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+                            TagAdapter tagAdapter = new TagAdapter(context, tagList);
+                            tagRecyclerView.setAdapter(tagAdapter);
+
+                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        } else if (response.code() == 500) {
+                            Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        } else if (response.code() == 404) {
+                            Toast.makeText(itemView.getContext(), "note found" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+
+                    //in case of failure to connection to server.
+                    @Override
+                    public void onFailure(Call<JsonObject> call, Throwable t) {
+                        Log.e("here", "Unable to submit post to API.");
+                        Toast.makeText(itemView.getContext(), "failed ", Toast.LENGTH_SHORT).show();
+                        t.printStackTrace();
+                    }
+
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        //deletes sharedNotes from server.
+        public void deleteSharedNote(String email, String note) {
+            //HttpCLient to Add Authorization Header.
+            OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
+                    .addInterceptor(
+                            new Interceptor() {
+                                @Override
+                                public okhttp3.Response intercept(Chain chain) throws IOException {
+                                    Request request = chain.request().newBuilder()
+                                            .addHeader("authorization", "bearer " + serverToken).build();
+                                    return chain.proceed(request);
+                                }
+                            }).build();
+            //Retrofit to retrieve JSON data from server.
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(ApiInterface.BASE_URL)
+                    .client(defaultHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                    .build();
+
+            ApiInterface apiService = retrofit.create(ApiInterface.class);
+            try {
+                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "", "");
+                apiService.deleteSharedNote(sharedNotes).enqueue(new Callback<JsonObject>() {
+                    @Override
+                    public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        if (response.isSuccessful()) {
+                            Log.i("here:", "post submitted to API." + response.body().toString());
                             noteLists.remove(p);
                             notifyItemRemoved(p);
                             tagList.remove(deleteTag);
@@ -282,6 +368,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
                     }
 
+                    //IN case of failure to connect to server.
                     @Override
                     public void onFailure(Call<JsonObject> call, Throwable t) {
                         Log.e("here", "Unable to submit post to API.");
@@ -298,8 +385,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
         }
 
-        //shares note in the server database.
-        public void shareNote(String sender_email, String reciever_email, String title, String note, String color, String tag,String fcmToken) {
+
+        //shares note in the server database with particular user.
+        public void shareNote(String sender_email, String reciever_email, String title, String note, String color, String tag, String fcmToken) {
 
 //HttpCLient to Add Authorization Header.
             OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
@@ -321,8 +409,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
-                SharedNotes sharedNotes = new SharedNotes(sender_email, reciever_email, title, note, color, tag,fcmToken);
+                SharedNotes sharedNotes = new SharedNotes(sender_email, reciever_email, title, note, color, tag, fcmToken, "");
                 apiService.shareNote(sharedNotes).enqueue(new Callback<JsonObject>() {
+                    //IN case server responds.
                     @Override
                     public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                         if (response.isSuccessful()) {
@@ -337,6 +426,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
                     }
 
+                    // In case of Failure.
                     @Override
                     public void onFailure(Call<JsonObject> call, Throwable t) {
                         t.printStackTrace();
@@ -353,10 +443,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
         }
 
+        //gets the Id of the note to be Edited.
         public void editNoteid(String email, String note) {
-
-
-//HttpCLient to Add Authorization Header.
+            //HttpCLient to Add Authorization Header.
             OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
                     .addInterceptor(
                             new Interceptor() {
@@ -378,6 +467,70 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
             try {
                 NoteList noteList = new NoteList(email, "", note, "", "", "");
                 apiService.editNoteId(noteList).enqueue(new Callback<NoteList>() {
+                    //In case of server responds.
+                    @Override
+                    public void onResponse(Call<NoteList> call, Response<NoteList> response) {
+                        if (response.isSuccessful()) {
+                            Log.i("here:", "post submitted to API." + response.body().toString());
+                            NoteList noteList = response.body();
+                            editNoteId = noteList.getId();
+                            Intent intent = new Intent(context, HomeActivity.class);
+                            context.startActivity(intent);
+//                           HomeActivity homeActivity=new HomeActivity();
+//                           homeActivity.showNotesAndTags();
+
+                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        } else if (response.code() == 500) {
+                            Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        } else if (response.code() == 404) {
+                            Toast.makeText(itemView.getContext(), "note found" + deleteNoteId, Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+
+                    //in case of failure.
+                    @Override
+                    public void onFailure(Call<NoteList> call, Throwable t) {
+                        Log.e("here", "Unable to submit post to API.");
+                        //System.out.print("throwable" + t);
+                        Toast.makeText(itemView.getContext(), "failed ", Toast.LENGTH_SHORT).show();
+                        t.printStackTrace();
+                    }
+
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        //gets Id of SharedNote which is to be edited.
+        public void editSharedNoteid(String email, String note) {
+
+            //HttpCLient to Add Authorization Header.
+            OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
+                    .addInterceptor(
+                            new Interceptor() {
+                                @Override
+                                public okhttp3.Response intercept(Chain chain) throws IOException {
+                                    Request request = chain.request().newBuilder()
+                                            .addHeader("authorization", "bearer " + serverToken).build();
+                                    return chain.proceed(request);
+                                }
+                            }).build();
+            //Retrofit to retrieve JSON data from server.
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(ApiInterface.BASE_URL)
+                    .client(defaultHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                    .build();
+
+            ApiInterface apiService = retrofit.create(ApiInterface.class);
+            try {
+                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "", "");
+                apiService.editSharedNoteId(sharedNotes).enqueue(new Callback<NoteList>() {
+
                     //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
                     @Override
                     public void onResponse(Call<NoteList> call, Response<NoteList> response) {
@@ -415,8 +568,17 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyHolder> {
 
         }
 
+        //sets data to the top layout for pinned Note.
+        void setPinnedNote(String title, String note, String tag, String color) {
+            pinnedNote.setText(note);
+            pinnedTag.setText(tag);
+            pinnedTitle.setText(title);
+            if (color != null)
+                pinnedNoteLayout.setBackgroundColor(Color.parseColor(color));
+            ViewGroup.LayoutParams params = pinnedNoteLayout.getLayoutParams();
+            params.height = 200;
+        }
 
     }
-
 
 }

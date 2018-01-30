@@ -1,4 +1,4 @@
-package com.example.imran.notes;
+package com.example.imran.notes.notification;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
@@ -9,6 +9,7 @@ import com.google.firebase.iid.FirebaseInstanceIdService;
 
 public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
     public static String recent_token;
+   //fetches recent Firebase Token to send firebase Notification.
     @Override
     public void onTokenRefresh() {
     recent_token = FirebaseInstanceId.getInstance().getToken();

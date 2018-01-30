@@ -1,20 +1,17 @@
-package com.example.imran.notes;
+package com.example.imran.notes.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by imran on 28/1/18.
+ * Created by imran on 15/1/18.
  */
+//Model for Normal notes.
+public class NoteList {
 
-public class SharedNotes {
-
-    @SerializedName("sender_email")
+    @SerializedName("emails")
     @Expose
-    String sender_email;
-    @SerializedName("reciever_email")
-    @Expose
-    String reciever_email;
+    String email;
     @SerializedName("title")
     @Expose
     String title;
@@ -27,18 +24,21 @@ public class SharedNotes {
     @SerializedName("tag")
     @Expose
     String tag;
-    @SerializedName("fcm_token")
-    @Expose
-    String fcmToken;
 
-    public SharedNotes(String sender_email, String reciever_email, String title, String note, String color, String tag,String fcmToken ) {
-        this.sender_email = sender_email;
-        this.reciever_email = reciever_email;
+    @SerializedName("id")
+    @Expose
+    String id;
+
+    public NoteList(String email, String title, String note, String color, String tag,String id) {
+        this.email = email;
         this.title = title;
         this.note = note;
         this.color = color;
         this.tag = tag;
-        this.fcmToken=fcmToken;
+        this.id=id;
+    }
+
+    public NoteList() {
     }
 
     public String getTitle() {
@@ -73,27 +73,19 @@ public class SharedNotes {
         this.tag = tag;
     }
 
-    public String getSender_Email() {
-        return sender_email;
+    public String getEmail() {
+        return email;
     }
 
-    public void setSender_Email(String email) {
-        this.sender_email = email;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public String getReciever_email() {
-        return reciever_email;
+    public String getId() {
+        return id;
     }
 
-    public void setReciever_email(String reciever_email) {
-        this.reciever_email = reciever_email;
-    }
-
-    public String getFcmToken() {
-        return fcmToken;
-    }
-
-    public void setFcmToken(String fcmToken) {
-        this.fcmToken = fcmToken;
+    public void setId(String id) {
+        this.id = id;
     }
 }

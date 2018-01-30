@@ -1,4 +1,4 @@
-package com.example.imran.notes;
+package com.example.imran.notes.activities;
 
 import android.content.Context;
 import android.graphics.Bitmap;

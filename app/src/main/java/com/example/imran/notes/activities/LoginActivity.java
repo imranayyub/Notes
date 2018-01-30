@@ -1,4 +1,4 @@
-package com.example.imran.notes;
+package com.example.imran.notes.activities;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -15,9 +15,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.example.imran.notes.interfaces.ApiInterface;
+import com.example.imran.notes.R;
+import com.example.imran.notes.model.User;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -28,17 +28,10 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.gson.JsonObject;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -48,16 +41,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
 
-    public static SharedPreferences pref;
-
+    public static SharedPreferences loginPref;
     private static final String TAG = LoginActivity.class.getSimpleName();
     private static final int RC_SIGN_IN = 007;
     public GoogleApiClient mGoogleApiClient;
-    private Context context;
     public static GoogleSignInClient googleSignInClient;
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
-    public static String userName, email, userPic,serverToken;
+    public static String userName, email, userPic, serverToken;
     public static Boolean login = false;
 
 
@@ -85,8 +76,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         //checks if user is already loggedin and perform suitable action.
         try {
-            pref = getApplicationContext().getSharedPreferences("MyPref", 0);
-            if (pref.getBoolean("login", false) == true) {
+            loginPref = getApplicationContext().getSharedPreferences("MyPref", 0);
+            if (loginPref.getBoolean("login", false) == true) {
                 signIn();
             }
         } catch (Exception e) {
@@ -111,8 +102,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         boolean connected = isNetworkAvailable();
         //If network is Available then perform Signin.
         if (connected == true) {
-//            c.setApp("Google");
-//            dbhelp.insert(c);
             Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
             startActivityForResult(signInIntent, RC_SIGN_IN);
         } else {
@@ -150,14 +139,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
 
             //putting data in SharedPreferences.
-            pref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
-            SharedPreferences.Editor editor = pref.edit();
+            loginPref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
+            SharedPreferences.Editor editor = loginPref.edit();
             login = true;
             editor.putBoolean("login", login);
             editor.commit();
 
 
-//trying to get the token.
+            //to get the Idtoken.
             final String token = acct.getId();
             //HttpCLient to Add Authorization Header.
             OkHttpClient client = new OkHttpClient.Builder()
@@ -174,40 +163,36 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
-//            String username = userEmail.getText().toString();
-//            String passwords = password.getText().toString();
-
-                User user = new User(email,token);
+                //initializing User constructor to send data to server.
+                User user = new User(email, token);
                 user.setEmail(email);
                 user.setToken(token);
+                //calls function loginUser of ApiInterface and enquques(sends request asynchronously)request and and notify callback of its response or if an error occurred talking to the server, creating the request, or processing the response.
                 apiService.loginUser(user).enqueue(new Callback<User>() {
-                    //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                    //in case server responds.
                     @Override
                     public void onResponse(Call<User> call, Response<User> response) {
                         mProgressDialog.dismiss();
+                        //if responsse is successful/
                         if (response.isSuccessful()) {
                             Log.i("here:", "post submitted to API." + response.body().toString());
-                            User user =response.body();
-                            serverToken=user.getToken();
-                            Log.i("token : ",user.getToken());
+                            User user = response.body();
+                            serverToken = user.getToken(); //getting server token to be used for authentication purpose.
+                            Log.i("token : ", user.getToken());
                             Toast.makeText(getApplicationContext(), "Login Successful..!! ", Toast.LENGTH_SHORT).show();
                             Intent main = new Intent(LoginActivity.this, HomeActivity.class);
                             startActivity(main);
                             finish();
 
-                        } else if (response.code() == 200) {
-                            Toast.makeText(getApplicationContext(), "Login Successful.. ", Toast.LENGTH_SHORT).show();
-                            Intent main = new Intent(LoginActivity.this, HomeActivity.class);
-                            startActivity(main);
-                            finish();
                         } else if (response.code() == 500) {
                             Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 404) {
                             Toast.makeText(getApplicationContext(), "Wrong Email or Password..", Toast.LENGTH_SHORT).show();
                         }
 
-                        }
+                    }
 
+                    //in case fails to connect to server.
                     @Override
                     public void onFailure(Call<User> call, Throwable t) {
                         t.printStackTrace();
@@ -224,8 +209,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
 
 
-
-}
+    }
 
     //In case Connnection is Failed.
     @Override

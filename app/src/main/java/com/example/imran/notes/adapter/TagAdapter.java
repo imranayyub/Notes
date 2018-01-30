@@ -1,24 +1,21 @@
-package com.example.imran.notes;
+package com.example.imran.notes.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.example.imran.notes.model.NoteList;
+import com.example.imran.notes.R;
 
 import java.util.ArrayList;
 
-import static com.example.imran.notes.HomeActivity.adapter;
-import static com.example.imran.notes.HomeActivity.noteLists;
-import static com.example.imran.notes.HomeActivity.recyclerView;
-import static com.example.imran.notes.MyAdapter.noteList;
-import static com.google.android.gms.internal.zzagr.runOnUiThread;
+import static com.example.imran.notes.activities.HomeActivity.adapter;
+import static com.example.imran.notes.activities.HomeActivity.noteLists;
+import static com.example.imran.notes.activities.HomeActivity.recyclerView;
 
 /**
  * Created by imran on 24/1/18.
@@ -47,14 +44,15 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
     }
 
 
+    //sets the data in recyclerView.
     @Override
     public void onBindViewHolder(TagAdapter.MyHolder holder, int position) {
-
         String tags = tagList.get(position);
         holder.tag.setText(tags);
     }
 
 
+    //returns the size of tagList.
     @Override
     public int getItemCount() {
         return tagList.size();
@@ -73,7 +71,7 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
             tag = (TextView) itemView.findViewById(R.id.tag);
             context = itemView.getContext();
 
-            //in case any Note is clicked.
+            //in case any Tag is clicked.
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -85,18 +83,14 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
                             noteByTags.add(n);
                         }
                     }
+                    //Intializing StaggeredGridLayoutManager.
                     StaggeredGridLayoutManager staggeredGridLayoutManager;
                     staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                             StaggeredGridLayoutManager.VERTICAL);
                     recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                    recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-
-                    adapter = new MyAdapter(context, noteByTags);
-//                registerForContextMenu(recyclerView);
+                    recyclerView.setLayoutManager(staggeredGridLayoutManager);
+                    adapter = new NoteAdapter(context, noteByTags);
                     recyclerView.setAdapter(adapter);
-
-//                    Intent intent = new Intent(context, HomeActivity.class);
-//                    context.startActivity(intent);
 
                 }
             });

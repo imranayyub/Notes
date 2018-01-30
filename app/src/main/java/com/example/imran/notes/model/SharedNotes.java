@@ -1,17 +1,20 @@
-package com.example.imran.notes;
+package com.example.imran.notes.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by imran on 15/1/18.
+ * Created by imran on 28/1/18.
  */
+//Model for SharedNotes.
+public class SharedNotes {
 
-public class NoteList {
-
-    @SerializedName("emails")
+    @SerializedName("sender_email")
     @Expose
-    String email;
+    String sender_email;
+    @SerializedName("reciever_email")
+    @Expose
+    String reciever_email;
     @SerializedName("title")
     @Expose
     String title;
@@ -24,21 +27,23 @@ public class NoteList {
     @SerializedName("tag")
     @Expose
     String tag;
-
+    @SerializedName("fcm_token")
+    @Expose
+    String fcmToken;
     @SerializedName("id")
     @Expose
     String id;
 
-    public NoteList(String email, String title, String note, String color, String tag,String id) {
-        this.email = email;
+
+    public SharedNotes(String sender_email, String reciever_email, String title, String note, String color, String tag,String fcmToken,String id ) {
+        this.sender_email = sender_email;
+        this.reciever_email = reciever_email;
         this.title = title;
         this.note = note;
         this.color = color;
         this.tag = tag;
+        this.fcmToken=fcmToken;
         this.id=id;
-    }
-
-    public NoteList() {
     }
 
     public String getTitle() {
@@ -73,12 +78,28 @@ public class NoteList {
         this.tag = tag;
     }
 
-    public String getEmail() {
-        return email;
+    public String getSender_Email() {
+        return sender_email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setSender_Email(String email) {
+        this.sender_email = email;
+    }
+
+    public String getReciever_email() {
+        return reciever_email;
+    }
+
+    public void setReciever_email(String reciever_email) {
+        this.reciever_email = reciever_email;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public String getId() {

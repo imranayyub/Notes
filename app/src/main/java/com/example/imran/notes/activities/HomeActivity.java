@@ -1,4 +1,4 @@
-package com.example.imran.notes;
+package com.example.imran.notes.activities;
 
 import android.app.AlertDialog;
 import android.app.FragmentManager;
@@ -6,11 +6,14 @@ import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -19,18 +22,23 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.example.imran.notes.fragments.AddNoteFragment;
+import com.example.imran.notes.interfaces.ApiInterface;
+import com.example.imran.notes.adapter.NoteAdapter;
+import com.example.imran.notes.model.NoteList;
+import com.example.imran.notes.R;
+import com.example.imran.notes.model.SharedNotes;
+import com.example.imran.notes.adapter.TagAdapter;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 
 import java.io.IOException;
@@ -39,7 +47,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -50,37 +57,38 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static com.example.imran.notes.LoginActivity.email;
-import static com.example.imran.notes.LoginActivity.login;
-import static com.example.imran.notes.LoginActivity.pref;
-import static com.example.imran.notes.LoginActivity.serverToken;
-import static com.example.imran.notes.LoginActivity.userName;
-import static com.example.imran.notes.LoginActivity.userPic;
-import static com.example.imran.notes.MyAdapter.editNoteId;
-import static com.example.imran.notes.TagAdapter.byTags;
+import static com.example.imran.notes.activities.LoginActivity.email;
+import static com.example.imran.notes.activities.LoginActivity.login;
+import static com.example.imran.notes.activities.LoginActivity.loginPref;
+import static com.example.imran.notes.activities.LoginActivity.serverToken;
+import static com.example.imran.notes.activities.LoginActivity.userName;
+import static com.example.imran.notes.activities.LoginActivity.userPic;
+import static com.example.imran.notes.adapter.NoteAdapter.editNoteId;
+import static com.example.imran.notes.adapter.NoteAdapter.pinnedNoteTag;
 
 
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
-    //defining DatabaseReference object to send and retrieve data.
-    public static DatabaseReference databaseNote;
 
+    public static SharedPreferences pinned;
     public static FloatingActionButton fab;
     ImageView imageView;
     TextView names, emails;
-    Button newNote;
     FragmentManager manager = getFragmentManager();    //Initializing Fragment Manager.
     AddNoteFragment Fragment = new AddNoteFragment();
 
     Retrofit retrofit;
     OkHttpClient defaultHttpClient;
 
+    //defining Variables.
     public static RecyclerView recyclerView, tagRecyclerView;
     public static ArrayList<NoteList> noteLists = new ArrayList<>();
     public static ArrayList<String> tagList = new ArrayList<>();
-    //    ArrayList<SharedNotes> sharedNoteList=new ArrayList<>();
-    //    ArrayList<NoteList> byTag = new ArrayList<>();
-    public static MyAdapter adapter;
+    public static NoteAdapter adapter;
+    public static int isShared = 0;
+
+    public static TextView pinnedNote, pinnedTitle, pinnedTag;
+    public static CardView pinnedNoteLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,14 +97,25 @@ public class HomeActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-//        newNote = (Button) findViewById(R.id.newNote);
-//        newNote.setOnClickListener(this);
+        //finding xml elements.
+        pinnedNote = (TextView) findViewById(R.id.pinnedNote);
+        pinnedTitle = (TextView) findViewById(R.id.pinnedtitle);
+        pinnedTag = (TextView) findViewById(R.id.pinnedTag);
+        pinnedNoteLayout = (CardView) findViewById(R.id.pinnedNoteLayout);
 
-        //getting date in day date month yy format.
-        DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy, HH:mm");
-        String date = df.format(Calendar.getInstance().getTime());
-        System.out.print(date);
-        Log.i("date", date);
+        //registers pinnedlayout for context menu.
+        registerForContextMenu(pinnedNoteLayout);
+
+        //checks if any not if already pinned to top or not
+        try {
+            pinned = getApplicationContext().getSharedPreferences("pinned", 0);
+            if (pinned.getBoolean("isPinned", false) == true) {
+                setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(this);
@@ -134,10 +153,12 @@ public class HomeActivity extends AppCompatActivity
         recyclerView = (RecyclerView) this.findViewById(R.id.recyclerView);
         tagRecyclerView = (RecyclerView) this.findViewById(R.id.tagRecyclerView);
 
+        //takes to edit fragment id editNoteId is not null.
         if (editNoteId != null) {
             showAddNoteFragment();
         }
 
+        //render all the notes and tags.
         showNotesAndTags();
 
 
@@ -150,34 +171,25 @@ public class HomeActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
+            if (Fragment != null) {
+                FragmentTransaction transaction = manager.beginTransaction();
+                transaction.remove(Fragment);
+                transaction.commit();
+            }
+            try {
+                pinned = getApplicationContext().getSharedPreferences("pinned", 0);
+                if (pinned.getBoolean("isPinned", false) == true) {
+                    setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             getSupportActionBar().setTitle("My Notes");
             fab.setVisibility(View.VISIBLE);
+            isShared = 0;
             showNotesAndTags();
-//            super.onBackPressed();
         }
     }
-
-////    @Override
-////    public boolean onCreateOptionsMenu(Menu menu) {
-//         Inflate the menu; this adds items to the action bar if it is present.
-////        getMenuInflater().inflate(R.menu.home, menu);
-////        return true;
-////    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-////        if (id == R.id.action_settings) {
-////            return true;
-////        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -185,21 +197,36 @@ public class HomeActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
         switch (id) {
+            //takes to home screen(My Notes in this case)
             case R.id.home: {
+                try {
+                    pinned = getApplicationContext().getSharedPreferences("pinned", 0);
+                    if (pinned.getBoolean("isPinned", false) == true) {
+                        setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 getSupportActionBar().setTitle("My Notes");
                 fab.setVisibility(View.VISIBLE);
+                isShared = 0;
                 showNotesAndTags();
                 break;
             }
-
+            //shows notes being Shared with the user.
             case R.id.sharedNotes: {
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) pinnedNoteLayout.getLayoutParams();
+                lp.height = 0;
+                pinnedNoteLayout.setLayoutParams(lp);
                 getSupportActionBar().setTitle("Shared Notes");
                 fab.setVisibility(View.INVISIBLE);
+                isShared = 1;
                 showSharedNotes(email);
                 break;
             }
+            // logs user out
             case R.id.logoutBn: {
-                // logs user out
+                isShared = 0;
                 logoutDialog();
                 break;
             }
@@ -216,14 +243,10 @@ public class HomeActivity extends AppCompatActivity
     public void onClick(View v) {
         int id = v.getId();
         switch (id) {
-//            case R.id.newNote: {
-//
-//                showAddNoteFragment();
-//                break;
-//            }
             case R.id.fab: {
-//            Snackbar.make(v, "Take a note", Snackbar.LENGTH_LONG);
-//                    .setAction("Action", null).show();
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) pinnedNoteLayout.getLayoutParams();
+                lp.height = 0;
+                pinnedNoteLayout.setLayoutParams(lp);
                 fab.setVisibility(View.INVISIBLE);
                 showAddNoteFragment();
                 break;
@@ -233,19 +256,17 @@ public class HomeActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
 
     //shows AddnoteFragment.
     public void showAddNoteFragment() {
+        ViewGroup.LayoutParams params = pinnedNoteLayout.getLayoutParams();
+        params.height = 0;
+        pinnedNoteLayout.setLayoutParams(params);
         getSupportActionBar().setTitle("Add Note");
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.replace(R.id.mainxml, Fragment).commit();
         transaction.show(Fragment);
         overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
-
 
     }
 
@@ -260,8 +281,6 @@ public class HomeActivity extends AppCompatActivity
         // Setting Dialog Message
         alertDialog.setMessage("Are you sure you want to Logout?");
 
-        // Setting Icon to Dialog
-//        alertDialog.setIcon(R.drawable.warning);
 
         // Setting Positive "Yes" Button
         alertDialog.setPositiveButton("YES", new DialogInterface.OnClickListener() {
@@ -270,8 +289,8 @@ public class HomeActivity extends AppCompatActivity
                 editNoteId = null;
                 login = false;
                 //putting login value as false.
-                pref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
-                SharedPreferences.Editor editor = pref.edit();
+                loginPref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
+                SharedPreferences.Editor editor = loginPref.edit();
                 editor.putBoolean("login", login);
                 editor.commit();
 
@@ -298,26 +317,6 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-//    public void showByTag(String tag) {
-//        for (NoteList n : noteList) {
-//            if ((n.getTag()).equals(tag)) {
-//                byTag.add(n);
-//            }
-//        }
-//        StaggeredGridLayoutManager staggeredGridLayoutManager;
-//        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-//                StaggeredGridLayoutManager.VERTICAL);
-//        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-//        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-//
-//
-//        MyAdapter adapter = new MyAdapter(HomeActivity.this, byTag);
-////                registerForContextMenu(recyclerView);
-//
-//        recyclerView.setAdapter(adapter);
-////        adapter.notifyDataSetChanged();
-//        byTags = null;
-//    }
 
     public void showNotesAndTags() {
         //HttpCLient to Add Authorization Header.
@@ -357,16 +356,17 @@ public class HomeActivity extends AppCompatActivity
                                 tagList.add(n.getTag());
                         }
 
+                        //Initializing StaggeredGrideLayoutManager.
                         StaggeredGridLayoutManager staggeredGridLayoutManager;
                         staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                                 StaggeredGridLayoutManager.VERTICAL);
                         recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
-
-                        adapter = new MyAdapter(HomeActivity.this, noteLists);
-//                registerForContextMenu(recyclerView);
+                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Setting StaggeredGridLayoutManager.
+                        adapter = new NoteAdapter(HomeActivity.this, noteLists);
+                        //setting Adapter On recyclerView.
                         recyclerView.setAdapter(adapter);
 
+                        //setting adapter for Tag RecyclerView.
                         StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
                         tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
                                 StaggeredGridLayoutManager.HORIZONTAL);
@@ -374,8 +374,6 @@ public class HomeActivity extends AppCompatActivity
                         tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
                         TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
                         tagRecyclerView.setAdapter(tagAdapter);
-
-//                        Toast.makeText(getApplicationContext(), "Notes..!! ", Toast.LENGTH_SHORT).show();
 
                     } else if (response.code() == 500) {
                         Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
@@ -385,6 +383,7 @@ public class HomeActivity extends AppCompatActivity
 
                 }
 
+                //In case of failure to connect to server.
                 @Override
                 public void onFailure(Call<List<NoteList>> call, Throwable t) {
                     t.printStackTrace();
@@ -400,7 +399,7 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-
+    //shows notes shared with User.
     public void showSharedNotes(String email) {
 
         //HttpCLient to Add Authorization Header.
@@ -423,9 +422,8 @@ public class HomeActivity extends AppCompatActivity
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "","");
+            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "", "", "");
             apiService.sharedNote(sharedNotes).enqueue(new Callback<List<NoteList>>() {
-                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
                 @Override
                 public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
                     if (response.isSuccessful()) {
@@ -446,8 +444,7 @@ public class HomeActivity extends AppCompatActivity
                         recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
                         recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Displays recycler view in fragment.
 
-                        adapter = new MyAdapter(HomeActivity.this, noteLists);
-//                registerForContextMenu(recyclerView);
+                        adapter = new NoteAdapter(HomeActivity.this, noteLists);
                         recyclerView.setAdapter(adapter);
 
                         StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
@@ -458,7 +455,6 @@ public class HomeActivity extends AppCompatActivity
                         TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
                         tagRecyclerView.setAdapter(tagAdapter);
 
-//                        Toast.makeText(getApplicationContext(), "Notes..!! ", Toast.LENGTH_SHORT).show();
 
                     } else if (response.code() == 500) {
                         Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
@@ -483,4 +479,40 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
+    //sets data of pinned note to top layout.
+    void setPinnedNote(String title, String note, String tag, String color) {
+        pinnedNote.setText(note);
+        pinnedTag.setText(tag);
+        pinnedTitle.setText(title);
+        if (color != null)
+            pinnedNoteLayout.setBackgroundColor(Color.parseColor(color));
+        ViewGroup.LayoutParams params = pinnedNoteLayout.getLayoutParams();
+        params.height = 200;
+        pinnedNoteLayout.setLayoutParams(params);
+    }
+
+    //creates contextmenu and add options.
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        menu.setHeaderTitle("Options :");
+        menu.add(0, v.getId(), 0, "Unpin from Top");
+    }
+
+    //In case any option is selected from Context menu.
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        //unpins the note from top.
+        if (item.getTitle() == "Unpin from Top") {
+            pinned = this.getSharedPreferences("pinned", 0); // 0 - for private mode
+            SharedPreferences.Editor editor = pinned.edit();
+            editor.putBoolean("isPinned", false);
+            editor.commit();
+            ViewGroup.LayoutParams params = pinnedNoteLayout.getLayoutParams();
+            params.height = 0;
+            pinnedNoteLayout.setLayoutParams(params);
+        }
+        return true;
+
+    }
 }
