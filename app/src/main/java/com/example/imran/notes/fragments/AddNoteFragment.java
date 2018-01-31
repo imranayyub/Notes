@@ -132,13 +132,10 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 if (notes.length() == 0)
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else if (editNoteId != null) {
-                    if (isShared == 1)
+                    if (isShared == 1) {
                         editSharedNote(email, title, notes, changecolor, tag, editNoteId);
-                    else
+                    } else
                         editNote(email, title, notes, changecolor, tag, editNoteId);
-//                    Intent intent;
-//                    intent = new Intent(getActivity(), HomeActivity.class);
-//                    startActivity(intent);
                 } else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
@@ -310,7 +307,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            SharedNotes sharedNotes = new SharedNotes("", email, title, note, color, tag, "", editNoteId);
+            SharedNotes sharedNotes = new SharedNotes("", email, title, note, color, tag, editNoteId);
             apiService.editSharedNote(sharedNotes).enqueue(new Callback<JsonObject>() {
                 //In case server responds.
                 @Override

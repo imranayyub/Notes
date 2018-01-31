@@ -28,6 +28,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +38,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+
+import static com.example.imran.notes.notification.MyFirebaseInstanceIDService.recent_token;
 
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
@@ -164,9 +167,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
                 //initializing User constructor to send data to server.
-                User user = new User(email, token);
+                User user = new User(email, token, FirebaseInstanceId.getInstance().getToken());
                 user.setEmail(email);
                 user.setToken(token);
+                user.setFcm_token(FirebaseInstanceId.getInstance().getToken());
                 //calls function loginUser of ApiInterface and enquques(sends request asynchronously)request and and notify callback of its response or if an error occurred talking to the server, creating the request, or processing the response.
                 apiService.loginUser(user).enqueue(new Callback<User>() {
                     //in case server responds.

@@ -110,7 +110,8 @@ public class HomeActivity extends AppCompatActivity
         try {
             pinned = getApplicationContext().getSharedPreferences("pinned", 0);
             if (pinned.getBoolean("isPinned", false) == true) {
-                setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
+                    setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,7 +159,19 @@ public class HomeActivity extends AppCompatActivity
             showAddNoteFragment();
         }
 
+        //checks if Sharednotes tab is open.
+        if(isShared==1)
+        {
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) pinnedNoteLayout.getLayoutParams();
+            lp.height = 0;
+            pinnedNoteLayout.setLayoutParams(lp);
+            getSupportActionBar().setTitle("Shared Notes");
+            fab.setVisibility(View.INVISIBLE);
+            isShared = 1;
+            showSharedNotes(email);
+        }
         //render all the notes and tags.
+        else
         showNotesAndTags();
 
 
@@ -179,7 +192,8 @@ public class HomeActivity extends AppCompatActivity
             try {
                 pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                 if (pinned.getBoolean("isPinned", false) == true) {
-                    setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                    if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
+                        setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -202,7 +216,8 @@ public class HomeActivity extends AppCompatActivity
                 try {
                     pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                     if (pinned.getBoolean("isPinned", false) == true) {
-                        setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                        if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
+                            setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -422,7 +437,7 @@ public class HomeActivity extends AppCompatActivity
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "", "", "");
+            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "", "");
             apiService.sharedNote(sharedNotes).enqueue(new Callback<List<NoteList>>() {
                 @Override
                 public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {

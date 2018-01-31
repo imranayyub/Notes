@@ -12,9 +12,9 @@ public class SharedNotes {
     @SerializedName("sender_email")
     @Expose
     String sender_email;
-    @SerializedName("reciever_email")
+    @SerializedName("recipient")
     @Expose
-    String reciever_email;
+    String recipient;
     @SerializedName("title")
     @Expose
     String title;
@@ -27,22 +27,19 @@ public class SharedNotes {
     @SerializedName("tag")
     @Expose
     String tag;
-    @SerializedName("fcm_token")
-    @Expose
-    String fcmToken;
+
     @SerializedName("id")
     @Expose
     String id;
 
 
-    public SharedNotes(String sender_email, String reciever_email, String title, String note, String color, String tag,String fcmToken,String id ) {
+    public SharedNotes(String sender_email, String recipient, String title, String note, String color, String tag,String id ) {
         this.sender_email = sender_email;
-        this.reciever_email = reciever_email;
+        this.recipient = recipient;
         this.title = title;
         this.note = note;
         this.color = color;
         this.tag = tag;
-        this.fcmToken=fcmToken;
         this.id=id;
     }
 
@@ -86,20 +83,12 @@ public class SharedNotes {
         this.sender_email = email;
     }
 
-    public String getReciever_email() {
-        return reciever_email;
+    public String getRecipient() {
+        return recipient;
     }
 
-    public void setReciever_email(String reciever_email) {
-        this.reciever_email = reciever_email;
-    }
-
-    public String getFcmToken() {
-        return fcmToken;
-    }
-
-    public void setFcmToken(String fcmToken) {
-        this.fcmToken = fcmToken;
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
     }
 
     public String getId() {

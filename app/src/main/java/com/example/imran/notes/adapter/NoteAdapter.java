@@ -189,7 +189,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
                             dialog.dismiss();
                             String reciever_email = input.getText().toString();
                             //shares note with the recipent.
-                            shareNote(email, reciever_email, note.getTitle(), note.getNote(), note.getColor(), note.getTag(), FirebaseInstanceId.getInstance().getToken());
+                            shareNote(email, reciever_email, note.getTitle(), note.getNote(), note.getColor(), note.getTag());
                         }
                     });
                     //else cancel the dialog without any action.
@@ -230,6 +230,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
                     pinned = context.getSharedPreferences("pinned", 0); // 0 - for private mode
                     SharedPreferences.Editor editor = pinned.edit();
                     editor.putBoolean("isPinned", true);
+                    editor.putString("pinnedEmail",email);
                     editor.putString("pinnedNote", pinnedNotes);
                     editor.putString("pinnedNoteTag", pinnedNoteTag);
                     editor.putString("pinnedNoteTitle", pinnedNoteTitle);
@@ -341,7 +342,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
-                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "", "");
+                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "");
                 apiService.deleteSharedNote(sharedNotes).enqueue(new Callback<JsonObject>() {
                     @Override
                     public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -387,7 +388,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 
 
         //shares note in the server database with particular user.
-        public void shareNote(String sender_email, String reciever_email, String title, String note, String color, String tag, String fcmToken) {
+        public void shareNote(String sender_email, String reciever_email, String title, String note, String color, String tag) {
 
 //HttpCLient to Add Authorization Header.
             OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
@@ -409,7 +410,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
-                SharedNotes sharedNotes = new SharedNotes(sender_email, reciever_email, title, note, color, tag, fcmToken, "");
+                SharedNotes sharedNotes = new SharedNotes(sender_email, reciever_email, title, note, color, tag, "");
                 apiService.shareNote(sharedNotes).enqueue(new Callback<JsonObject>() {
                     //IN case server responds.
                     @Override
@@ -528,7 +529,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 
             ApiInterface apiService = retrofit.create(ApiInterface.class);
             try {
-                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "", "");
+                SharedNotes sharedNotes = new SharedNotes("", email, "", note, "", "", "");
                 apiService.editSharedNoteId(sharedNotes).enqueue(new Callback<NoteList>() {
 
                     //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {

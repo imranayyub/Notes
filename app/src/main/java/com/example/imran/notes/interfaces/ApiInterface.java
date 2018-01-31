@@ -24,6 +24,10 @@ public interface ApiInterface {
     @POST("login")
     Call<User> loginUser(@Body User body);
 
+    @POST("user/updatetoken")
+    Call<User> updateFcmToken(@Body User body);
+
+
     //fetches all the notes from server database.
     @POST("note")
     Call<List<NoteList>> notes(@Body NoteList body);
