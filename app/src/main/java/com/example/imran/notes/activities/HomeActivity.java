@@ -111,7 +111,7 @@ public class HomeActivity extends AppCompatActivity
             pinned = getApplicationContext().getSharedPreferences("pinned", 0);
             if (pinned.getBoolean("isPinned", false) == true) {
                 if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                    setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                    setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -193,7 +193,7 @@ public class HomeActivity extends AppCompatActivity
                 pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                 if (pinned.getBoolean("isPinned", false) == true) {
                     if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                        setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                        setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -217,7 +217,7 @@ public class HomeActivity extends AppCompatActivity
                     pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                     if (pinned.getBoolean("isPinned", false) == true) {
                         if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                            setPinnedNote(pinned.getString("pinnedNotetitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                            setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

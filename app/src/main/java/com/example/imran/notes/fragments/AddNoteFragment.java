@@ -53,7 +53,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     EditText note, noteTitle, noteTag;
     Button addNote, cancel;
     String notes, title, tag, color;
-    static String changecolor;
+    static String changecolor = "#ffffff";
     FloatingActionButton addColor;
     Button color1, color2, color3, color4, color5, color6, color7, defaultcolor;
     HorizontalScrollView colormenu;
@@ -85,8 +85,12 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
             note.setText(editNote);
             noteTitle.setText(editNoteTitle);
             noteTag.setText(editNoteTag);
-            if (editNoteColor != null)
+            if (editNoteColor != null && !editNoteColor.equals("")) {
+                changecolor = editNoteColor;
                 addNoteFrameLyout.setBackgroundColor(Color.parseColor(editNoteColor));//87CEEB
+            }
+        } else {
+            changecolor = "#ffffff";
         }
         //sets onClickListener on buttons.
         addNote.setOnClickListener(this);

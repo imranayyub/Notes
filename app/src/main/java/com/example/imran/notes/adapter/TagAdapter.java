@@ -1,6 +1,8 @@
 package com.example.imran.notes.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
@@ -64,19 +66,21 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
         TextView tag;
         public Context context;
         int p;
+        CardView tagCard;
         ArrayList<NoteList> byTag = new ArrayList<>();
 
         public MyHolder(final View itemView) {
             super(itemView);
             tag = (TextView) itemView.findViewById(R.id.tag);
             context = itemView.getContext();
-
+            tagCard = itemView.findViewById(R.id.cardviewlayout);
             //in case any Tag is clicked.
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     p = getLayoutPosition();
                     byTags = tagList.get(p);
+//                    tagCard.setBackgroundColor(Color.parseColor("#7f7fff"));
                     noteByTags.clear();
                     for (NoteList n : noteLists) {
                         if (n.getTag().equals(byTags)) {

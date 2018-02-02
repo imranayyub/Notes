@@ -39,7 +39,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             notificationBuilder.setContentText(body);
             notificationBuilder.setAutoCancel(true);
             notificationBuilder.setOngoing(true);
-            notificationBuilder.setOnlyAlertOnce(true);
+//            notificationBuilder.setOnlyAlertOnce(true);
 
             notificationBuilder.setContentIntent(pendingIntent);
 

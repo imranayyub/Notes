@@ -295,7 +295,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
                             TagAdapter tagAdapter = new TagAdapter(context, tagList);
                             tagRecyclerView.setAdapter(tagAdapter);
 
-                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 500) {
                             Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 404) {
@@ -360,7 +360,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
                             TagAdapter tagAdapter = new TagAdapter(context, tagList);
                             tagRecyclerView.setAdapter(tagAdapter);
 
-                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 500) {
                             Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 404) {
@@ -480,7 +480,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 //                           HomeActivity homeActivity=new HomeActivity();
 //                           homeActivity.showNotesAndTags();
 
-                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 500) {
                             Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 404) {
@@ -544,7 +544,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.MyHolder> {
 //                           HomeActivity homeActivity=new HomeActivity();
 //                           homeActivity.showNotesAndTags();
 
-                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(itemView.getContext(), "Removing Note" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 500) {
                             Toast.makeText(itemView.getContext(), "error" + deleteNoteId, Toast.LENGTH_SHORT).show();
                         } else if (response.code() == 404) {
