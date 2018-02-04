@@ -42,6 +42,8 @@ import static com.example.imran.notes.adapter.NoteAdapter.editNote;
 import static com.example.imran.notes.adapter.NoteAdapter.editNoteColor;
 import static com.example.imran.notes.adapter.NoteAdapter.editNoteId;
 import static com.example.imran.notes.adapter.NoteAdapter.editNoteTag;
+import static com.example.imran.notes.adapter.NoteAdapter.editNoteTag1;
+import static com.example.imran.notes.adapter.NoteAdapter.editNoteTag2;
 import static com.example.imran.notes.adapter.NoteAdapter.editNoteTitle;
 
 /**
@@ -50,15 +52,15 @@ import static com.example.imran.notes.adapter.NoteAdapter.editNoteTitle;
 
 public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
-    EditText note, noteTitle, noteTag;
+    EditText note, noteTitle, noteTag, noteTag1, noteTag2;
     Button addNote, cancel;
-    String notes, title, tag, color;
+    String notes, title, tag, color, tag1, tag2;
     static String changecolor = "#ffffff";
     FloatingActionButton addColor;
     Button color1, color2, color3, color4, color5, color6, color7, defaultcolor;
     HorizontalScrollView colormenu;
     FrameLayout addNoteFrameLyout;
-    int count = 0;
+    int count = 0,id=0;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -73,6 +75,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         //finds element in xml.
         note = (EditText) getActivity().findViewById(R.id.note);
         noteTag = (EditText) getActivity().findViewById(R.id.noteTag);
+        noteTag1 = (EditText) getActivity().findViewById(R.id.noteTag1);
+        noteTag2 = (EditText) getActivity().findViewById(R.id.noteTag2);
         noteTitle = (EditText) getActivity().findViewById(R.id.noteTitle);
         addNote = (Button) getActivity().findViewById(R.id.addNote);
         cancel = (Button) getActivity().findViewById(R.id.cancel);
@@ -85,6 +89,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
             note.setText(editNote);
             noteTitle.setText(editNoteTitle);
             noteTag.setText(editNoteTag);
+            noteTag1.setText(editNoteTag1);
+            noteTag2.setText(editNoteTag2);
             if (editNoteColor != null && !editNoteColor.equals("")) {
                 changecolor = editNoteColor;
                 addNoteFrameLyout.setBackgroundColor(Color.parseColor(editNoteColor));//87CEEB
@@ -129,6 +135,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 notes = note.getText().toString();
                 title = noteTitle.getText().toString();
                 tag = noteTag.getText().toString();
+                tag1 = noteTag1.getText().toString();
+                tag2 = noteTag2.getText().toString();
                 if (tag == null)
                     tag = "";
                 if (title == null)
@@ -137,13 +145,14 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                     Toast.makeText(getActivity(), "Note Empty", Toast.LENGTH_SHORT).show();
                 else if (editNoteId != null) {
                     if (isShared == 1) {
-                        editSharedNote(email, title, notes, changecolor, tag, editNoteId);
+                        editSharedNote(email, title, notes, changecolor, tag, tag1, tag2, editNoteId);
+
                     } else
-                        editNote(email, title, notes, changecolor, tag, editNoteId);
+                        editNote(email, title, notes, changecolor, tag, tag1, tag2, editNoteId);
                 } else {
                     Toast.makeText(getActivity(), "Note added successfully", Toast.LENGTH_SHORT).show();
                     Intent intent;
-                    addNote(email, title, notes, changecolor, tag);
+                    addNote(email, title, notes, changecolor, tag, tag1, tag2);
                     intent = new Intent(getActivity(), HomeActivity.class);
                     startActivity(intent);
                     getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
@@ -227,7 +236,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     }
 
     //edits Note and save it on server.
-    private void editNote(String email, String title, String note, String color, String tag, String editNoteId) {
+    private void editNote(String email, String title, String note, String color, String tag, String tag1, String tag2, final String editNoteId) {
 
         //HttpCLient to Add Authorization Header.
         OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
@@ -249,7 +258,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            NoteList noteList = new NoteList(email, title, note, color, tag, editNoteId);
+            final NoteList noteList = new NoteList(email, title, note, color, tag, tag1, tag2, editNoteId);
+
             apiService.editNote(noteList).enqueue(new Callback<JsonObject>() {
                 //In case server responds.
                 @Override
@@ -257,6 +267,9 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                     if (response.isSuccessful()) {
                         Log.i("here:", "post submitted to API." + response.body().toString());
                         NoteAdapter.editNoteId = null;
+                        noteList.setId(String.valueOf(editNoteId));
+                        noteList.setStatus("synced");
+                        noteList.save();
                         Intent intent = new Intent(getActivity(), HomeActivity.class);
                         startActivity(intent);
                         getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
@@ -264,9 +277,16 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                         Toast.makeText(getActivity(), "Note edit successfully..!! ", Toast.LENGTH_SHORT).show();
 
                     } else if (response.code() == 500) {
+                        noteList.setId(String.valueOf(editNoteId));
+                        noteList.setStatus("editNote");
+                        noteList.save();
+                        id++;
                         Toast.makeText(getActivity(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
                     } else if (response.code() == 404) {
-                        Toast.makeText(getActivity(), "wrong..", Toast.LENGTH_SHORT).show();
+                        noteList.setId(String.valueOf(editNoteId));
+                        noteList.setStatus("editNote");
+                        noteList.save();
+                        Toast.makeText(getActivity(), "Not Found", Toast.LENGTH_SHORT).show();
                     }
 
                 }
@@ -275,6 +295,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 @Override
                 public void onFailure(Call<JsonObject> call, Throwable t) {
                     t.printStackTrace();
+                    noteList.setStatus("editNote");
+                    noteList.save();
                     Log.e("here", "Unable to submit post to API.");
                     Toast.makeText(getActivity(), "failed ", Toast.LENGTH_SHORT).show();
 
@@ -289,7 +311,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
     }
 
     //edits SharedNote and save it on the server.
-    private void editSharedNote(String email, String title, String note, String color, String tag, String editNoteId) {
+    private void editSharedNote(String email, String title, String note, String color, String tag, String tag1, String tag2, final String editNoteId) {
 
         //HttpCLient to Add Authorization Header.
         OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
@@ -311,14 +333,18 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            SharedNotes sharedNotes = new SharedNotes("", email, title, note, color, tag, editNoteId);
+            final SharedNotes sharedNotes = new SharedNotes("", email, title, note, color, tag, tag1, tag2, editNoteId);
             apiService.editSharedNote(sharedNotes).enqueue(new Callback<JsonObject>() {
                 //In case server responds.
                 @Override
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (response.isSuccessful()) {
                         Log.i("here:", "post submitted to API." + response.body().toString());
+                        sharedNotes.setId(editNoteId);
+                        sharedNotes.setStatus("synced");
+                        sharedNotes.save();
                         NoteAdapter.editNoteId = null;
+
                         Intent intent = new Intent(getActivity(), HomeActivity.class);
                         startActivity(intent);
                         getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
@@ -326,9 +352,15 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                         Toast.makeText(getActivity(), "Note edit successfully..!! ", Toast.LENGTH_SHORT).show();
 
                     } else if (response.code() == 500) {
+                        sharedNotes.setId(editNoteId);
+                        sharedNotes.setStatus("editSharedNote");
+                        sharedNotes.save();
                         Toast.makeText(getActivity(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
                     } else if (response.code() == 404) {
-                        Toast.makeText(getActivity(), "wrong..", Toast.LENGTH_SHORT).show();
+                        sharedNotes.setId(editNoteId);
+                        sharedNotes.setStatus("editSharedNote");
+                        sharedNotes.save();
+                        Toast.makeText(getActivity(), "Not Found", Toast.LENGTH_SHORT).show();
                     }
 
                 }
@@ -338,6 +370,8 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 public void onFailure(Call<JsonObject> call, Throwable t) {
                     t.printStackTrace();
                     Log.e("here", "Unable to submit post to API.");
+                    sharedNotes.setStatus("editSharedNote");
+                    sharedNotes.save();
                     Toast.makeText(getActivity(), "failed ", Toast.LENGTH_SHORT).show();
 
                 }
@@ -352,8 +386,7 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
 
     //adds note in the server database.
-    public void addNote(String email, String title, String note, String color, String tag) {
-
+    public void addNote(String email, String title, String note, String color, String tag, String tag1, String tag2) {
 
 //HttpCLient to Add Authorization Header.
         OkHttpClient defaultHttpClient = new OkHttpClient.Builder()
@@ -375,13 +408,18 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            NoteList noteList = new NoteList(email, title, note, color, tag, "");
+           final NoteList noteList = new NoteList(email, title, note, color, tag, tag1, tag2, "");
+
             apiService.addNote(noteList).enqueue(new Callback<NoteList>() {
                 @Override
                 public void onResponse(Call<NoteList> call, Response<NoteList> response) {
                     if (response.isSuccessful()) {
                         Log.i("here:", "post submitted to API." + response.body().toString());
                         NoteList noteList = response.body();
+                        noteList.setId(String.valueOf(id));
+                        id++;
+                        noteList.setStatus("synced");
+                        noteList.save();
                         Intent intent = new Intent(getActivity(), HomeActivity.class);
                         startActivity(intent);
                         getActivity().overridePendingTransition(R.anim.slide_in, R.anim.slide_out);
@@ -389,9 +427,17 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                         Toast.makeText(getActivity(), "Notes..!! ", Toast.LENGTH_SHORT).show();
 
                     } else if (response.code() == 500) {
-                        Toast.makeText(getActivity(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                        noteList.setId(String.valueOf(id));
+                        id++;
+                        noteList.setStatus("addNote");
+                        noteList.save();
+                        Toast.makeText(getActivity(), "Some Error occured(Iternal server error)", Toast.LENGTH_SHORT).show();
                     } else if (response.code() == 404) {
-                        Toast.makeText(getActivity(), "wrong..", Toast.LENGTH_SHORT).show();
+                        noteList.setId(String.valueOf(id));
+                        id++;
+                        noteList.setStatus("addNote");
+                        noteList.save();
+                        Toast.makeText(getActivity(), "Not Found", Toast.LENGTH_SHORT).show();
                     }
 
                 }
@@ -399,6 +445,10 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
                 @Override
                 public void onFailure(Call<NoteList> call, Throwable t) {
                     t.printStackTrace();
+                    noteList.setId(String.valueOf(id));
+                    id++;
+                    noteList.setStatus("addNote");
+                    noteList.save();
                     Log.e("here", "Unable to submit post to API.");
                     Toast.makeText(getActivity(), "failed ", Toast.LENGTH_SHORT).show();
 
@@ -408,7 +458,6 @@ public class AddNoteFragment extends Fragment implements View.OnClickListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
+
 }

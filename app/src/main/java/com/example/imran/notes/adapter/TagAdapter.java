@@ -51,6 +51,7 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
     public void onBindViewHolder(TagAdapter.MyHolder holder, int position) {
         String tags = tagList.get(position);
         holder.tag.setText(tags);
+        holder.tagCard.setTag("false");
     }
 
 
@@ -80,12 +81,22 @@ public class TagAdapter extends RecyclerView.Adapter<TagAdapter.MyHolder> {
                 public void onClick(View view) {
                     p = getLayoutPosition();
                     byTags = tagList.get(p);
-//                    tagCard.setBackgroundColor(Color.parseColor("#7f7fff"));
+                    if (tagCard.getTag().equals("false")) {
+                        tagCard.setBackgroundColor(Color.parseColor("#7f7fff"));
+                    tagCard.setTag(true);
+                    }
+                    else
+                    {
+                        tagCard.setTag("false");
+                        tagCard.setBackgroundColor(Color.parseColor("#b2b2ff"));
+                    }
+
                     noteByTags.clear();
                     for (NoteList n : noteLists) {
-                        if (n.getTag().equals(byTags)) {
+                        if (n.getTag().equals(byTags) || n.getTag1().equals(byTags) || n.getTag2().equals(byTags)) {
                             noteByTags.add(n);
                         }
+
                     }
                     //Intializing StaggeredGridLayoutManager.
                     StaggeredGridLayoutManager staggeredGridLayoutManager;

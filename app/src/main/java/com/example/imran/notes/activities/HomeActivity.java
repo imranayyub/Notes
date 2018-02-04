@@ -3,11 +3,15 @@ package com.example.imran.notes.activities;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -38,7 +42,11 @@ import com.example.imran.notes.model.NoteList;
 import com.example.imran.notes.R;
 import com.example.imran.notes.model.SharedNotes;
 import com.example.imran.notes.adapter.TagAdapter;
+import com.example.imran.notes.model.User;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
+import com.raizlabs.android.dbflow.sql.language.SQLite;
 
 
 import java.io.IOException;
@@ -58,8 +66,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.example.imran.notes.activities.LoginActivity.email;
-import static com.example.imran.notes.activities.LoginActivity.login;
-import static com.example.imran.notes.activities.LoginActivity.loginPref;
+import static com.example.imran.notes.activities.LoginActivity.googleSignInClient;
+import static com.example.imran.notes.activities.LoginActivity.loggedIn;
 import static com.example.imran.notes.activities.LoginActivity.serverToken;
 import static com.example.imran.notes.activities.LoginActivity.userName;
 import static com.example.imran.notes.activities.LoginActivity.userPic;
@@ -84,10 +92,12 @@ public class HomeActivity extends AppCompatActivity
     public static RecyclerView recyclerView, tagRecyclerView;
     public static ArrayList<NoteList> noteLists = new ArrayList<>();
     public static ArrayList<String> tagList = new ArrayList<>();
-    public static NoteAdapter adapter;
-    public static int isShared = 0;
+    public static ArrayList<String> idList = new ArrayList<>();
 
-    public static TextView pinnedNote, pinnedTitle, pinnedTag;
+    public static NoteAdapter adapter;
+    public static int isShared = 0, isOffline = 0;
+
+    public static TextView pinnedNote, pinnedTitle, pinnedTag, pinnedTag1, pinnedTag2;
     public static CardView pinnedNoteLayout;
 
     @Override
@@ -101,6 +111,8 @@ public class HomeActivity extends AppCompatActivity
         pinnedNote = (TextView) findViewById(R.id.pinnedNote);
         pinnedTitle = (TextView) findViewById(R.id.pinnedtitle);
         pinnedTag = (TextView) findViewById(R.id.pinnedTag);
+        pinnedTag1 = (TextView) findViewById(R.id.pinnedTag1);
+        pinnedTag2 = (TextView) findViewById(R.id.pinnedTag2);
         pinnedNoteLayout = (CardView) findViewById(R.id.pinnedNoteLayout);
 
         //registers pinnedlayout for context menu.
@@ -111,7 +123,7 @@ public class HomeActivity extends AppCompatActivity
             pinned = getApplicationContext().getSharedPreferences("pinned", 0);
             if (pinned.getBoolean("isPinned", false) == true) {
                 if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                    setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                    setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteTag1", "asd"), pinned.getString("pinnedNoteTag2", "asd"), pinned.getString("pinnedNoteColor", "asd"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -160,8 +172,7 @@ public class HomeActivity extends AppCompatActivity
         }
 
         //checks if Sharednotes tab is open.
-        if(isShared==1)
-        {
+        if (isShared == 1) {
             LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) pinnedNoteLayout.getLayoutParams();
             lp.height = 0;
             pinnedNoteLayout.setLayoutParams(lp);
@@ -172,7 +183,7 @@ public class HomeActivity extends AppCompatActivity
         }
         //render all the notes and tags.
         else
-        showNotesAndTags();
+            showNotesAndTags();
 
 
     }
@@ -193,7 +204,7 @@ public class HomeActivity extends AppCompatActivity
                 pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                 if (pinned.getBoolean("isPinned", false) == true) {
                     if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                        setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                        setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteTag1", "asd"), pinned.getString("pinnedNoteTag2", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -217,7 +228,7 @@ public class HomeActivity extends AppCompatActivity
                     pinned = getApplicationContext().getSharedPreferences("pinned", 0);
                     if (pinned.getBoolean("isPinned", false) == true) {
                         if (pinned.getString("pinnedEmail", "dfdsf").equals(email))
-                            setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteColor", "asd"));
+                            setPinnedNote(pinned.getString("pinnedNoteTitle", "ads"), pinned.getString("pinnedNote", "as"), pinned.getString("pinnedNoteTag", "asd"), pinned.getString("pinnedNoteTag1", "asd"), pinned.getString("pinnedNoteTag2", "asd"), pinned.getString("pinnedNoteColor", "asd"));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -302,15 +313,10 @@ public class HomeActivity extends AppCompatActivity
             public void onClick(DialogInterface dialog, int which) {
 
                 editNoteId = null;
-                login = false;
-                //putting login value as false.
-                loginPref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
-                SharedPreferences.Editor editor = loginPref.edit();
-                editor.putBoolean("login", login);
-                editor.commit();
-
-                LoginActivity loginActivity = new LoginActivity();
-                loginActivity.signOut();
+                //deleting login record from database.
+                SQLite.delete().from(User.class).query();
+                loggedIn = 0;
+                signOut();
 
                 Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
                 //Starting LoginActivity.
@@ -334,84 +340,143 @@ public class HomeActivity extends AppCompatActivity
 
 
     public void showNotesAndTags() {
-        //HttpCLient to Add Authorization Header.
-        defaultHttpClient = new OkHttpClient.Builder()
-                .addInterceptor(
-                        new Interceptor() {
-                            @Override
-                            public okhttp3.Response intercept(Chain chain) throws IOException {
-                                Request request = chain.request().newBuilder()
-                                        .addHeader("authorization", "bearer " + serverToken).build();
-                                return chain.proceed(request);
-                            }
-                        }).build();
-        //Retrofit to retrieve JSON data from server.
-        retrofit = new Retrofit.Builder()
-                .baseUrl(ApiInterface.BASE_URL)
-                .client(defaultHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
-                .build();
 
-        ApiInterface apiService = retrofit.create(ApiInterface.class);
-        try {
-            NoteList noteList = new NoteList(email, "title", "note", "color", "tag", "");
-            apiService.notes(noteList).enqueue(new Callback<List<NoteList>>() {
-                //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
-                @Override
-                public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
-                    if (response.isSuccessful()) {
-                        Log.i("here:", "post submitted to API." + response.body().toString());
-                        List<NoteList> noteList = response.body();
-                        noteLists.clear();
-                        tagList.clear();
-                        for (NoteList n : noteList) {
-                            Log.i("note", n.getNote());
-                            noteLists.add(n);
-                            if (!n.getTag().equals(""))
-                                tagList.add(n.getTag());
+        if (isInternetAvailable(HomeActivity.this) == false) {
+            List<NoteList> noteList = SQLite.select().from(NoteList.class).queryList();
+            isOffline = 1;
+            for (NoteList n : noteList) {
+//                Log.i("note", n.getNote());
+                noteLists.add(n);
+                idList.add(n.getId());
+                if (n.getTag1() != null) {
+                    if (!n.getTag().equals(""))
+                        tagList.add(n.getTag());
+                }
+                if (n.getTag1() != null) {
+                    if (!n.getTag1().equals(""))
+                        tagList.add(n.getTag1());
+                }
+                if (n.getTag2() != null) {
+                    if (!n.getTag2().equals(""))
+                        tagList.add(n.getTag2());
+                }
+            }
+
+            //Initializing StaggeredGrideLayoutManager.
+            StaggeredGridLayoutManager staggeredGridLayoutManager;
+            staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                    StaggeredGridLayoutManager.VERTICAL);
+            recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+            recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Setting StaggeredGridLayoutManager.
+            adapter = new NoteAdapter(HomeActivity.this, noteLists);
+            //setting Adapter On recyclerView.
+            recyclerView.setAdapter(adapter);
+
+            //setting adapter for Tag RecyclerView.
+            StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+            tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                    StaggeredGridLayoutManager.HORIZONTAL);
+            tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+            tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+            TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
+            tagRecyclerView.setAdapter(tagAdapter);
+
+        } else {
+            //HttpCLient to Add Authorization Header.
+            defaultHttpClient = new OkHttpClient.Builder()
+                    .addInterceptor(
+                            new Interceptor() {
+                                @Override
+                                public okhttp3.Response intercept(Chain chain) throws IOException {
+                                    Request request = chain.request().newBuilder()
+                                            .addHeader("authorization", "bearer " + serverToken).build();
+                                    return chain.proceed(request);
+                                }
+                            }).build();
+            //Retrofit to retrieve JSON data from server.
+            retrofit = new Retrofit.Builder()
+                    .baseUrl(ApiInterface.BASE_URL)
+                    .client(defaultHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())     //Using GSON to Convert JSON into POJO.
+                    .build();
+
+            ApiInterface apiService = retrofit.create(ApiInterface.class);
+            try {
+                NoteList noteList = new NoteList(email, "title", "note", "color", "tag", "", "", "");
+                apiService.notes(noteList).enqueue(new Callback<List<NoteList>>() {
+                    //        apiService.savePost(username, password, phone).enqueue(new Callback<User>() {
+                    @Override
+                    public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
+                        if (response.isSuccessful()) {
+                            Log.i("here:", "post submitted to API." + response.body().toString());
+                            List<NoteList> noteList = response.body();
+                            noteLists.clear();
+                            tagList.clear();
+                            idList.clear();
+                            for (NoteList n : noteList) {
+                                Log.i("note", n.getNote());
+                                noteLists.add(n);
+                                idList.add(n.getId());
+                                if (!n.getTag().equals(""))
+                                    tagList.add(n.getTag());
+                                if (n.getTag1() != null) {
+                                    if (!n.getTag1().equals(""))
+                                        tagList.add(n.getTag1());
+                                }
+                                if (n.getTag2() != null) {
+                                    if (!n.getTag2().equals(""))
+                                        tagList.add(n.getTag2());
+                                }
+                            }
+
+                            //Initializing StaggeredGrideLayoutManager.
+                            StaggeredGridLayoutManager staggeredGridLayoutManager;
+                            staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                                    StaggeredGridLayoutManager.VERTICAL);
+                            recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                            recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Setting StaggeredGridLayoutManager.
+                            adapter = new NoteAdapter(HomeActivity.this, noteLists);
+                            //setting Adapter On recyclerView.
+                            recyclerView.setAdapter(adapter);
+
+                            //setting adapter for Tag RecyclerView.
+                            StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
+                            tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
+                                    StaggeredGridLayoutManager.HORIZONTAL);
+                            tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
+                            tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
+                            TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
+                            tagRecyclerView.setAdapter(tagAdapter);
+
+                        } else if (response.code() == 500)
+
+                        {
+                            Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
+                        } else if (response.code() == 404)
+
+                        {
+                            Toast.makeText(getApplicationContext(), "wrong..", Toast.LENGTH_SHORT).show();
                         }
 
-                        //Initializing StaggeredGrideLayoutManager.
-                        StaggeredGridLayoutManager staggeredGridLayoutManager;
-                        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-                                StaggeredGridLayoutManager.VERTICAL);
-                        recyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                        recyclerView.setLayoutManager(staggeredGridLayoutManager);  //Setting StaggeredGridLayoutManager.
-                        adapter = new NoteAdapter(HomeActivity.this, noteLists);
-                        //setting Adapter On recyclerView.
-                        recyclerView.setAdapter(adapter);
-
-                        //setting adapter for Tag RecyclerView.
-                        StaggeredGridLayoutManager tagStaggeredGridLayoutManager;
-                        tagStaggeredGridLayoutManager = new StaggeredGridLayoutManager(1,
-                                StaggeredGridLayoutManager.HORIZONTAL);
-                        tagRecyclerView.setHasFixedSize(true);   //If the RecyclerView knows in advance that its size doesn't depend on the adapter content, then it will skip checking if its size should change every time an item is added or removed from the adapter.
-                        tagRecyclerView.setLayoutManager(tagStaggeredGridLayoutManager);  //Displays recycler view in fragment.
-                        TagAdapter tagAdapter = new TagAdapter(HomeActivity.this, tagList);
-                        tagRecyclerView.setAdapter(tagAdapter);
-
-                    } else if (response.code() == 500) {
-                        Toast.makeText(getApplicationContext(), "Some Error occured(Iternal ", Toast.LENGTH_SHORT).show();
-                    } else if (response.code() == 404) {
-                        Toast.makeText(getApplicationContext(), "wrong..", Toast.LENGTH_SHORT).show();
                     }
 
-                }
+                    //In case of failure to connect to server.
+                    @Override
+                    public void onFailure(Call<List<NoteList>> call, Throwable t) {
+                        t.printStackTrace();
+                        Log.e("here", "Unable to submit post to API.");
+                        Toast.makeText(getApplicationContext(), "failed ", Toast.LENGTH_SHORT).show();
 
-                //In case of failure to connect to server.
-                @Override
-                public void onFailure(Call<List<NoteList>> call, Throwable t) {
-                    t.printStackTrace();
-                    Log.e("here", "Unable to submit post to API.");
-                    Toast.makeText(getApplicationContext(), "failed ", Toast.LENGTH_SHORT).show();
+                    }
 
-                }
+                });
+            } catch (
+                    Exception e)
 
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
+            {
+                e.printStackTrace();
+            }
         }
-
     }
 
     //shows notes shared with User.
@@ -437,7 +502,7 @@ public class HomeActivity extends AppCompatActivity
 
         ApiInterface apiService = retrofit.create(ApiInterface.class);
         try {
-            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "", "");
+            SharedNotes sharedNotes = new SharedNotes("", email, "title", "note", "", "", "", "", "");
             apiService.sharedNote(sharedNotes).enqueue(new Callback<List<NoteList>>() {
                 @Override
                 public void onResponse(Call<List<NoteList>> call, Response<List<NoteList>> response) {
@@ -446,11 +511,21 @@ public class HomeActivity extends AppCompatActivity
                         List<NoteList> noteList = response.body();
                         tagList.clear();
                         noteLists.clear();
+                        idList.clear();
                         for (NoteList n : noteList) {
                             Log.i("note", n.getNote());
                             noteLists.add(n);
+                            idList.add(n.getId());
                             if (!n.getTag().equals(""))
                                 tagList.add(n.getTag());
+                            if (n.getTag1() != null) {
+                                if (!n.getTag1().equals(""))
+                                    tagList.add(n.getTag1());
+                            }
+                            if (n.getTag2() != null) {
+                                if (!n.getTag2().equals(""))
+                                    tagList.add(n.getTag2());
+                            }
                         }
 
                         StaggeredGridLayoutManager staggeredGridLayoutManager;
@@ -494,16 +569,17 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
-    //sets data of pinned note to top layout.
-    void setPinnedNote(String title, String note, String tag, String color) {
+    //sets data to the top layout for pinned Note.
+    void setPinnedNote(String title, String note, String tag, String tag1, String tag2, String color) {
         pinnedNote.setText(note);
         pinnedTag.setText(tag);
+        pinnedTag1.setText(tag1);
+        pinnedTag2.setText(tag2);
         pinnedTitle.setText(title);
         if (color != null)
             pinnedNoteLayout.setBackgroundColor(Color.parseColor(color));
         ViewGroup.LayoutParams params = pinnedNoteLayout.getLayoutParams();
         params.height = 200;
-        pinnedNoteLayout.setLayoutParams(params);
     }
 
     //creates contextmenu and add options.
@@ -529,5 +605,28 @@ public class HomeActivity extends AppCompatActivity
         }
         return true;
 
+    }
+
+    //sign out  function for google
+    public void signOut() {
+        googleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                    }
+                });
+    }
+
+    //checks if internet is available or not.
+    public static boolean isInternetAvailable(Context context) {
+        try {
+            ConnectivityManager connectivityManager
+                    = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        } catch (Exception e) {
+            Log.e("SEVERE", "internet_check", e);
+            return true;
+        }
     }
 }

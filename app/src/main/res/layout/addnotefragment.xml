@@ -18,16 +18,40 @@
         android:singleLine="true"
         android:textAlignment="viewStart"
         android:textStyle="bold" />
-
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_marginTop="55dp"
+    android:layout_height="50dp"
+    android:orientation="horizontal">
     <EditText
         android:id="@+id/noteTag"
         android:maxLines="1"
         android:singleLine="true"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginTop="55dp"
+        android:layout_weight="1"
         android:gravity="start"
-        android:hint="Tag..." />
+        android:hint="Tag 1..." />
+    <EditText
+        android:id="@+id/noteTag1"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:gravity="start"
+        android:hint="Tag 2..." />
+    <EditText
+        android:id="@+id/noteTag2"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:gravity="start"
+        android:hint="Tag 3..." />
+
+</LinearLayout>
 
     <EditText
         android:id="@+id/note"

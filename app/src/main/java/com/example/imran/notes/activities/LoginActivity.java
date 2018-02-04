@@ -29,7 +29,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.raizlabs.android.dbflow.sql.language.From;
+import com.raizlabs.android.dbflow.sql.language.SQLite;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -44,15 +47,14 @@ import static com.example.imran.notes.notification.MyFirebaseInstanceIDService.r
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
 
-    public static SharedPreferences loginPref;
     private static final String TAG = LoginActivity.class.getSimpleName();
     private static final int RC_SIGN_IN = 007;
+    public static int loggedIn = 0;
     public GoogleApiClient mGoogleApiClient;
     public static GoogleSignInClient googleSignInClient;
     private ProgressDialog mProgressDialog;
     private Button gmailSigninButton;
     public static String userName, email, userPic, serverToken;
-    public static Boolean login = false;
 
 
     @Override
@@ -77,14 +79,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        //checks if user is already loggedin and perform suitable action.
-        try {
-            loginPref = getApplicationContext().getSharedPreferences("MyPref", 0);
-            if (loginPref.getBoolean("login", false) == true) {
+        //checks database is user is already logged in or not.
+        List<User> user = SQLite.select().from(User.class).queryList();
+        if (user.size() != 0) {
+            User users = user.get(0);
+            if (users.getEmail() != null)
                 signIn();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -112,16 +112,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 
-    //sign out  function for google
-    public void signOut() {
-        googleSignInClient.signOut()
-                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                    }
-                });
-    }
-
 
     //function to fetch the google log in data(Name , Email and profile) for current profile logged in
     public void handleSignInResult(GoogleSignInResult result) {
@@ -141,16 +131,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 userPic = "Nopic";
             }
 
-            //putting data in SharedPreferences.
-            loginPref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
-            SharedPreferences.Editor editor = loginPref.edit();
-            login = true;
-            editor.putBoolean("login", login);
-            editor.commit();
-
-
             //to get the Idtoken.
             final String token = acct.getId();
+
+
             //HttpCLient to Add Authorization Header.
             OkHttpClient client = new OkHttpClient.Builder()
                     .readTimeout(60, TimeUnit.SECONDS)
@@ -168,9 +152,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             try {
                 //initializing User constructor to send data to server.
                 User user = new User(email, token, FirebaseInstanceId.getInstance().getToken());
-                user.setEmail(email);
-                user.setToken(token);
-                user.setFcm_token(FirebaseInstanceId.getInstance().getToken());
+                user.save();
                 //calls function loginUser of ApiInterface and enquques(sends request asynchronously)request and and notify callback of its response or if an error occurred talking to the server, creating the request, or processing the response.
                 apiService.loginUser(user).enqueue(new Callback<User>() {
                     //in case server responds.
@@ -182,6 +164,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                             Log.i("here:", "post submitted to API." + response.body().toString());
                             User user = response.body();
                             serverToken = user.getToken(); //getting server token to be used for authentication purpose.
+                            loggedIn = 1;
                             Log.i("token : ", user.getToken());
                             Toast.makeText(getApplicationContext(), "Login Successful..!! ", Toast.LENGTH_SHORT).show();
                             Intent main = new Intent(LoginActivity.this, HomeActivity.class);

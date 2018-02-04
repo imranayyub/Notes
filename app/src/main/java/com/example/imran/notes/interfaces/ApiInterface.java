@@ -18,7 +18,7 @@ import retrofit2.http.POST;
 public interface ApiInterface {
 
     //Base Url.
-     String BASE_URL = "http://192.168.20.86:1337/";
+     String BASE_URL = "http://192.168.1.105:1337/";
 
      //checks if user is already registered otherwise logs in .
     @POST("login")
